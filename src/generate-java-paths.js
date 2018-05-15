@@ -6,15 +6,23 @@ var gen = require('./java-gen');
 module.exports = function (model, javaPackage, apiName, host, basePath) {
     apiName += 'Paths';
     var contents = '';
+    var modelPrefix = model.prefix;
+    // if( modelPrefix ){
+    //     (function dropLeadingSlashes() {
+    //         var start;
+    //         for( start=0 ; modelPrefix[start]==='/' ; ++start );
+    //         modelPrefix = modelPrefix.substr( start );
+    //     }());
+    // }
     return {
         start: function () {
             contents += 'package ' + javaPackage + ';\n\n';
             contents += 'public final class ' + gen.classOf(apiName) + ' {\n' +
                 '    public static final String BASE_URL = "' + (host || '') + (basePath || '') + '";\n' +
-                '    public static final String BASE_PATH = "' + model.prefix + '";\n';
+                '    public static final String BASE_PATH = "' + modelPrefix + '";\n';
         },
         write: function () {
-            write(model.simple, model.prefix);
+            write(model.simple, modelPrefix);
         },
         finish: function () {
             contents += '}';
@@ -48,7 +56,7 @@ module.exports = function (model, javaPackage, apiName, host, basePath) {
                             newPath += '/' + (param ? param.original : name);
                         }
                         var constructor = 'private ' + newParents[0] + '(){}';
-                        var pathVar = isBased ? ('"' + newPath + '"') : ('BASE_PATH + "' + newPath.substring(model.prefix.length) + '"');
+                        var pathVar = isBased ? ('"' + newPath + '"') : ('BASE_PATH + "' + newPath.substring(model.prefix.length+1) + '"');
                         line(parents.length + 1, constructor + ' public static final String PATH = ' + pathVar + ';');
                         doWrite(value, newPath, newParents, isBased);
                         if (!isBased && hasChildren(value)) {
