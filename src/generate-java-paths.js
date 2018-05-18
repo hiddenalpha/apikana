@@ -49,7 +49,7 @@ module.exports = function (model, javaPackage, apiName, host, basePath) {
                             newPath += '/' + (param ? param.original : name);
                         }
                         var constructor = 'private ' + newParents[0] + '(){}';
-                        var basePath = newPath.substring(model.prefix.length+1);
+                        var basePath = newPath.substring(model.prefix.length);
                         basePath = UrlUtils.dropLeadingSlashes( basePath );
                         var pathVar = isBased ? ('"' + newPath + '"') : ('BASE_PATH + "' + basePath + '"');
                         line(parents.length + 1, constructor + ' public static final String PATH = ' + pathVar + ';');
