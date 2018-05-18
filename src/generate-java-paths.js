@@ -15,7 +15,7 @@ module.exports = function (model, javaPackage, apiName, host, basePath) {
                 '    public static final String BASE_PATH = "' + UrlUtils.dropLeadingSlashes(model.prefix) + '";\n';
         },
         write: function () {
-            write(model.simple, UrlUtils.dropLeadingSlashes(model.prefix) );
+            write(model.simple, model.prefix);
         },
         finish: function () {
             contents += '}';
