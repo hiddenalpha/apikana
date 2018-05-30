@@ -14,7 +14,7 @@ module.exports = function (model, javaPackage, apiName, host, basePath) {
             var valueForBasePathConstant = model.prefix;
             if( basePath && basePath.endsWith('/') ){
                 // Drop leading slash in constant because basePath already provides one.
-                log.debug( "Dropped leading slashes for BASE_PATH java constant because api basePath already wears trailing slash." );
+                log.debug( "Dropped leading slashes for BASE_PATH java constant because BASE_URL (aka api.basePath) already wears trailing slash." );
                 valueForBasePathConstant = urlUtils.dropLeadingSlashes( valueForBasePathConstant );
             }
             log.debug( "Using BASE_PATH = '"+ valueForBasePathConstant +"'.");
