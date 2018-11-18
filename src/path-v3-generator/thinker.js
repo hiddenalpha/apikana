@@ -61,7 +61,7 @@ function setupJavaTypes( paths ){
 				name += s;
 			}
 		});
-		javaTypeFoo.addField(JavaType.createJavaField({
+		javaTypeFoo.fields.push(JavaType.createJavaField({
 			accessLevel: "PUBLIC",
 			isStatic: true,
 			isFinal: true,
@@ -71,6 +71,50 @@ function setupJavaTypes( paths ){
 	}
 
 	javaTypeFoo.serializeTo( stdout );
+}
+
+
+function createPathTreeMock(){
+	return {
+		"sample": {
+			"v1": {
+				"antrittscheck": {
+					"alarmings": {
+						"uuid": {
+							"context" : {}
+						}
+					}
+				},
+				"sample": {
+					"v1": {
+						"alarmings": {
+							"className": {
+								"alarmings": {}
+							}
+						}
+					}
+				},
+				"sample": {
+					"v1": {
+						"alarmings": {
+							"className": {
+								"case": {
+									"req-._uest": {}
+								}
+							}
+						}
+					}
+				},
+				"sample": {
+					"v1": {
+						"users": {
+							"my-{class}.zip": {}
+						}
+					}
+				}
+			}
+		}
+	};
 }
 
 

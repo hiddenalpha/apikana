@@ -23,7 +23,7 @@ function createJavaType( props ){
 	var serializer = props.serializer;
 	props = null;
 	//
-	const fields = [];
+	const fields = createAdvancedArray();
 	return Object.create( Object.prototype , {
 		/** @return {JavaTypeKind} */
 		"getKind": { value: function(){
@@ -32,19 +32,7 @@ function createJavaType( props ){
 		/** Get FullyQualifiedClassName. */
 		"getClassName": { value: function(){ return className; }},
 		"getPackageName": { value: function(){ return packageName; }},
-		"addField": { value: function( field ){
-			return fields.push( field );
-		}},
-		"getField": { value: function( i ){
-			return fields[i];
-		}},
-		"rmField": { value: function( i ){
-			if( arguments.length != 1 ) throw Error("Expected 1 arg but got "+arguments.length+"");
-			fields.splice( i , 1 );
-		}},
-		"getFieldLength": { value: function(){
-			return fields.length;
-		}},
+		"fields": { get: function(){ return fields; }},
 		/**
 		 * @return {Promise}
 		 */
@@ -53,6 +41,34 @@ function createJavaType( props ){
 			return serializer.serializeTo( this , writable );
 		}},
 	});
+}
+
+
+function createAdvancedArray( arr , options ){
+	if( typeof(arr)=="undefined" ) arr = [];
+	if( !Array.isArray(arr) ) throw Error( "Arg 'arr': Array expected but got '"+ typeof(arr) +"'." );
+	if( options && options.mixin ){
+		Object.defineProperty( arr , 'at' , {value:function(){ return arr[i]; }});
+		return arr;
+	}else{
+		return Object.create( Object.prototype , {
+			"constructor": { value: function AdvancedArray(){ throw Error("Not supported."); }},
+			"0":           { get:   function(){ throw Error("Index access prohibited. Use 'at()' method instead."); }},
+			"at":          { value: function( i ){ return arr[i]; }},
+			"length":      { get:   function(){ return arr.length; }},
+			"forEach":     { value: function(){ return arr.forEach.apply(     arr,arguments); }},
+			"indexOf":     { value: function(){ return arr.indexOf.apply(     arr,arguments); }},
+			"join":        { value: function(){ return arr.join.apply(        arr,arguments); }},
+			"keys":        { value: function(){ return createAdvancedArray( arr.keys.apply(arr,arguments),{mixin:true}); }},
+			"lastIndexOf": { value: function(){ return arr.lastIndexOf.apply( arr,arguments); }},
+			"push":        { value: function(){ return arr.push.apply(        arr,arguments); }},
+			"shift":       { value: function(){ return arr.shift.apply(       arr,arguments); }},
+			"slice":       { value: function(){ return arr.slice.apply(       arr,arguments); }},
+			"sort":        { value: function(){ return arr.sort.apply(        arr,arguments); }},
+			"splice":      { value: function(){ return createAdvancedArray( arr.splice.apply(arr,arguments)),{mixin:true}; }},
+			"values":      { value: function(){ return createAdvancedArray( arr.values.apply(arr,arguments,{mixin:true})); }},
+		});
+	}
 }
 
 
@@ -77,12 +93,12 @@ function createJavaTypeSerializer( props ){
 	function serializeFields( type , write , writable ){
 		return new Promise(function( fulfill , reject ){
 			(function loop( i ){
-				if( i >= type.getFieldLength() ){
+				if( i >= type.fields.length ){
 					fulfill( null );
 				}else{
 					Promise.resolve()
 						.then(write.bind(0, indent ))
-						.then(function(){ return type.getField(i).serializeTo(writable); })
+						.then(function(){ return type.fields.at(i).serializeTo(writable); })
 						.then(write.bind(0, "\n" ))
 						.then( loop.bind(0,i+1) )
 					;
