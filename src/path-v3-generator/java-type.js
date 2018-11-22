@@ -7,6 +7,8 @@ exports.createJavaType = createJavaType;
 
 // Private ////////////////////////////////////////////////////////////////////
 
+const pathV3Utils = require("./pathV3Utils");
+
 
 function createJavaType( props ){
 	// Process args
@@ -77,7 +79,7 @@ function createJavaTypeSerializer( props ){
 	const indent = typeof(props.indent)=="string" ? props.indent : "\t";
 	return Object.create( Object.prototype , {
 		"serializeTo": { value: function( type , writable ){
-			const write = createPromisifiedWrite( writable );
+			const write = pathV3Utils.createPromisifiedWrite( writable );
 			return Promise.resolve()
 				.then(function(){
 					const packageName = type.getPackageName();
@@ -147,7 +149,7 @@ function createJavaFieldSerializer(){
 			var didWrite = false;
 			// Intercept 'write' to track if we already wrote something.
 			const write = (function(){
-				const nestedWrite = createPromisifiedWrite( writable );
+				const nestedWrite = pathV3Utils.createPromisifiedWrite( writable );
 				return function write( chunk ){
 					didWrite = true;
 					nestedWrite( chunk );
@@ -237,27 +239,3 @@ Object.defineProperties( JavaTypeKind , {
 		return JavaTypeKind( key ).toLowerCase();
 	}}
 });
-
-
-/**
- * <p>Wraps a nodejs Writable so we only have to pass the chunk. Encoding and
- * callback will be implicitly provided by that wrapper. Also this will wrap
- * the calback API within a Promise API.</p>
- */
-function createPromisifiedWrite( writable ){
-	if( !writable || typeof(writable.write) != "function" ) throw Error("Arg 'writable': Expected to be writable but isn't.");
-	return function( chunk ){
-		return new Promise(function( fulfill , reject ){
-			if( !writable.write( chunk , "UTF-8" ) ){
-				writable.once( "drain" , onWritten );
-			}else{
-				onWritten();
-			}
-			function onWritten(){
-				if( arguments[0] && Object.keys(arguments[0]).length > 0 ) throw Error("Unexpected behavior _d25fd9f8d2946018060ddcc8f18edb8f_");
-				fulfill( null );
-			}
-		});
-	};
-}
-

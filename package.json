@@ -8,7 +8,7 @@
     "apikana-serve": "./bin/apikana-serve"
   },
   "scripts": {
-    "test": "echo \"No test specified\"",
+    "test": "node ./node_modules/jasmine/bin/jasmine.js src/test/specs/**.spec.js",
     "build": "browserify src/browserify.js -t brfs -i source-map-support > lib/browserify.js",
     "test-build": "cd test && node ../bin/apikana start --javaPackage=apikana.test --log=info",
     "test-deploy": "cd test && node ../bin/apikana start --javaPackage=apikana.test --deploy",
@@ -62,6 +62,7 @@
     "brfs": "1.4.3",
     "browserify": "13.0.0",
     "crlf": "1.1.0",
-    "docson": "1.0.2"
+    "docson": "1.0.2",
+    "jasmine": "^3.3.0"
   }
 }
