@@ -70,51 +70,81 @@ function setupJavaTypes( paths ){
 		}));
 	}
 
+	;(function(){
+		console.log( "------------------" );
+		function node_toString( node ) {
+			//return JSON.stringify( node );
+			return node._name;
+		}
+		function node_getChilds( node ) {
+			console.log( "[DEBUG] Extract childs of '"+(node._name|"FOO")+"'" );
+			var childs = Object.values( node );
+			for( var i=0 ; i<childs.length ; ++i ){
+				if( childs[i].name=="_name" ){ childs.splice(i,1); }
+			}
+			console.log( "[DEBUG] Childs -> ", JSON.stringify(childs) );
+			return childs;
+		}
+		printTree( createPathTreeMock() , node_toString , node_getChilds , stdout );
+		console.log( "------------------" );
+	}());
+
 	javaTypeFoo.serializeTo( stdout );
 }
 
 
+function printTree( node , toString , getChilds , writable , prefix , stack ) {
+	if( !prefix ) prefix = "";
+	if( !stack ) stack = [];
+	// DEBUG ///////////////////////////////
+	if( prefix.length > 150 ) throw Error( "Too deep" );
+	// END DEBUG ///////////////////////////
+	var previous = stack[stack.length-1];
+	writable.write( prefix + " |-> "+ previous||"NULL" );
+	var childs = getChilds( node ) || [];
+	if( !childs.at ) childs.at = function(i){ return this[i];};
+	for( var i=0 ; i<childs.length ; ++i ){
+		var child = childs.at( i );
+		if( typeof(child) != "object" ) throw Error("asgawrgh");
+		writable.write( prefix +" |-> "+ toString(child) +"\n" );
+		printTree( child , toString , getChilds , writable , prefix+" |   " );
+	}
+}
+
+
 function createPathTreeMock(){
-	return {
-		"sample": {
-			"v1": {
-				"antrittscheck": {
-					"alarmings": {
-						"uuid": {
-							"context" : {}
-						}
-					}
-				},
-				"sample": {
-					"v1": {
-						"alarmings": {
-							"className": {
-								"alarmings": {}
-							}
-						}
-					}
-				},
-				"sample": {
-					"v1": {
-						"alarmings": {
-							"className": {
-								"case": {
-									"req-._uest": {}
-								}
-							}
-						}
-					}
-				},
-				"sample": {
-					"v1": {
-						"users": {
-							"my-{class}.zip": {}
-						}
+	return enrichNodeName( "sample" , {
+		"v1": {
+			"antrittscheck": {
+				"alarmings": {
+					"uuid": {
+						"context" : {}
 					}
 				}
+			},
+			"alarmings": {
+				"className": {
+					"alarmings": {},
+					"case": {
+						"req-._uest": {}
+					}
+				},
+			},
+			"users": {
+				"my-{class}.zip": {}
 			}
 		}
-	};
+	});
+	function enrichNodeName( name , node ) {
+		node._name = name;
+		const keys = Object.keys( node );
+		for( var i=0 ; i<keys.length ; ++i ){
+			const key = keys[i];
+			if( key == "_name" ) break;
+			enrichNodeName( key , node[key] );
+		}
+		return node;
+	}
 }
 
 
