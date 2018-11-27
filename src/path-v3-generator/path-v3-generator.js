@@ -13,8 +13,7 @@ const UrlUtils = require('src/url-utils');
 
 function createPathV3Generator( options ) {
 	if( !options ) options = {};
-	if( !options.openApi ) throw Error("Arg 'options.openApi' missing.");
-	if( !options.javaPackage ) throw Error("Arg 'options.javaPackage' missing.");
+	throwIfPathV3GeneratorOptionsBad( options );
 	return {
 		writeTo: function( writable ){
 			const write = pathV3Utils.createPromisifiedWrite( writable );
@@ -36,6 +35,13 @@ function createPathV3Generator( options ) {
 			;
 		}
 	};
+	function throwIfPathV3GeneratorOptionsBad( options ){
+		if( !options.openApi ) throw Error("Arg 'options.openApi' missing.");
+
+		if( !options.javaPackage ) throw Error("Arg 'options.javaPackage' missing.");
+		if( typeof(options.javaPackage) != "string" ) throw Error( "Arg 'options.javaPackage' string expected but got '"+typeof(options.javaPackage)+"'" );
+		if( !/^(?![0-9])(?!.*\.[0-9])[A-Za-z0-9.]+$/.test(options.javaPackage) ) throw Error( "Illegal chars in javaPackage" );
+	}
 }
 
 function pathToConstantName( path ) {
