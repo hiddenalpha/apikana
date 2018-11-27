@@ -8,7 +8,7 @@
     "apikana-serve": "./bin/apikana-serve"
   },
   "scripts": {
-    "test": "node ./node_modules/jasmine/bin/jasmine.js src/test/specs/**.spec.js",
+    "test": "node ./node_modules/jasmine/bin/jasmine.js test/specs/**.spec.js",
     "build": "browserify src/browserify.js -t brfs -i source-map-support > lib/browserify.js",
     "test-build": "cd test && node ../bin/apikana start --javaPackage=apikana.test --log=info",
     "test-deploy": "cd test && node ../bin/apikana start --javaPackage=apikana.test --deploy",
