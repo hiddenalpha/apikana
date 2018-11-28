@@ -25,7 +25,41 @@ describe( "path-v3-generator" , ()=>{
 	});
 
 
-	xit( "Only uses valid chars for Java identifiers in generated constants" , ( done )=>{
+	it( "Only uses valid chars for Java identifiers in generated constants" , ( done )=>{
+		const api = {
+			"paths": {
+				"/store-inventory": null,
+				"/2nd/try": null,
+				"/what.about.dots": null,
+				"/are/you/sure?": null,
+				"/are/you/a-genious": null,
+				"/a space": null,
+			}
+		};
+
+		// Setup & configure a generator instance.
+		const victim = PathV3Generator.createPathV3Generator({
+			openApi: api,
+			javaPackage: "com.example",
+		});
+
+		victim.readable()
+			.pipe( PathV3Utils.createStringWritable() )
+			.then( assertResult )
+		;
+
+		function assertResult( result ){
+			console.log( "RESULT:\n" , result , "\n" );
+			const lines = result.split( "\n" );
+			for( var iLine=0 ; iLine<lines.length ; ++iLine ){
+				const line = lines[ iLine ];
+				const groups = /.*\s([^\s]+)\s*=\s*"([^\s]+)".*/.exec( line );
+				if( groups == null ) continue;
+				const constName = groups[1];
+				const constValue = groups[2];
+				console.log( "-> ", constName, " = ", constValue );
+			}
+		}
 	});
 
 
