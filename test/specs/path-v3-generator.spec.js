@@ -25,7 +25,11 @@ describe( "path-v3-generator" , ()=>{
 	});
 
 
-	it( "Only uses valid chars for Java identifiers in generated constants" , ( done )=>{
+	xit( "Only uses valid chars for Java identifiers in generated constants" , ( done )=>{
+	});
+
+
+	it( "Every path constant wears a leading slash and no trailing one" , ( done )=>{
 		const api = {
 			"paths": {
 				"/store-inventory": null,
@@ -49,29 +53,21 @@ describe( "path-v3-generator" , ()=>{
 		;
 
 		function assertResult( result ){
-			console.log( "RESULT:\n" , result , "\n" );
 			const lines = result.split( "\n" );
+			var pathCount = 0;
 			for( var iLine=0 ; iLine<lines.length ; ++iLine ){
 				const line = lines[ iLine ];
-				const groups = /.*\s([^\s]+)\s*=\s*"([^\s]+)".*/.exec( line );
-				if( groups == null ) continue;
-				const constName = groups[1];
-				const constValue = groups[2];
-				console.log( "-> ", constName, " = ", constValue );
+				// Extract the generated path.
+				const groups = /.*public static final String PATH = BASE_PATH \+ "(.+)";$/.exec( line );
+				if( groups == null ){ continue; }
+				const value = groups[1];
+				expect( value ).toMatch( /^\// ); // MUST HAVE leading slash.
+				expect( value ).toMatch( /[^\/]$/ ); // MUST NOT HAVE trailing slash.
+				pathCount += 1;
 			}
+			expect( pathCount ).toBe( 10 );
+			done();
 		}
-	});
-
-
-	xit( "Every path constant wears a leading slash" , ( done )=>{
-	});
-
-
-	xit( "No path constant wears a trailing slash" , ( done )=>{
-		const victim = PathV3Generator.createPathV3Generator({
-			openApi: YAML.load( "test/test/src/openapi/api.yaml" ),
-			javaPackage: "com.example",
-		});
 	});
 
 
