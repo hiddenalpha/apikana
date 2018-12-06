@@ -12,37 +12,37 @@ if( require.main == module ) setTimeout( main );
 
 function main(){
 
-	exitWhenEnvNotOk();
+    exitWhenEnvNotOk();
 
-	if(DEBUG) console.log( "\x1b[36m[DEBUG] Create jasmine instance.\x1b[39m" );
-	const jasmine = new Jasmine();
+    if(DEBUG) console.log( "\x1b[36m[DEBUG] Create jasmine instance.\x1b[39m" );
+    const jasmine = new Jasmine();
 
-	const configFilePath = __dirname.replace(/\\/g,'/') + "/jasmine.config.json";
-	if(DEBUG) console.log( "\x1b[36m[DEBUG] Load jasmine config '"+ configFilePath +"'.\x1b[39m" );
-	jasmine.loadConfigFile( configFilePath );
+    const configFilePath = __dirname.replace(/\\/g,'/') + "/jasmine.config.json";
+    if(DEBUG) console.log( "\x1b[36m[DEBUG] Load jasmine config '"+ configFilePath +"'.\x1b[39m" );
+    jasmine.loadConfigFile( configFilePath );
 
-	if(DEBUG) console.log( "\x1b[36m[DEBUG] Execute jasmine tests now.\x1b[39m" );
-	jasmine.execute();
+    if(DEBUG) console.log( "\x1b[36m[DEBUG] Execute jasmine tests now.\x1b[39m" );
+    jasmine.execute();
 }
 
 
 function exitWhenEnvNotOk(){
-	const envPath = NODE_PATH ? NODE_PATH.replace(/\\/g,'/') : null;
-	const cwd = process.cwd().replace( /\\/g , '/' );
+    const envPath = NODE_PATH ? NODE_PATH.replace(/\\/g,'/') : null;
+    const cwd = process.cwd().replace( /\\/g , '/' );
 
-	// Check if our cwd (hopefully our projects root) exists in NODE_PATH.
-	if( !envPath || envPath.indexOf(cwd) == -1 ){ printAndExit(); }
+    // Check if our cwd (hopefully our projects root) exists in NODE_PATH.
+    if( !envPath || envPath.indexOf(cwd) == -1 ){ printAndExit(); }
 
-	function printAndExit(){
-		console.log( "\x1b[31m[ERROR]\x1b[39m Make sure projects root dir is included in NODE_PATH:" );
-		console.log( "\x1b[31m[ERROR]\x1b[39m " );
-		console.log( "\x1b[31m[ERROR]\x1b[39m     export NODE_PATH=`pwd`" );
-		console.log( "\x1b[31m[ERROR]\x1b[39m " );
-		console.log( "\x1b[31m[ERROR]\x1b[39m Or if you're on windows:" );
-		console.log( "\x1b[31m[ERROR]\x1b[39m " );
-		console.log( '\x1b[31m[ERROR]\x1b[39m     set "NODE_PATH='+process.cwd()+'\\"' );
-		console.log( "\x1b[31m[ERROR]\x1b[39m " );
-		process.exit( 1 );
-	}
+    function printAndExit(){
+        console.log( "\x1b[31m[ERROR]\x1b[39m Make sure projects root dir is included in NODE_PATH:" );
+        console.log( "\x1b[31m[ERROR]\x1b[39m " );
+        console.log( "\x1b[31m[ERROR]\x1b[39m     export NODE_PATH=`pwd`" );
+        console.log( "\x1b[31m[ERROR]\x1b[39m " );
+        console.log( "\x1b[31m[ERROR]\x1b[39m Or if you're on windows:" );
+        console.log( "\x1b[31m[ERROR]\x1b[39m " );
+        console.log( '\x1b[31m[ERROR]\x1b[39m     set "NODE_PATH='+process.cwd()+'\\"' );
+        console.log( "\x1b[31m[ERROR]\x1b[39m " );
+        process.exit( 1 );
+    }
 }
 

@@ -8,26 +8,26 @@
 
 // Mock above include because that victim module doesn't exist :)
 const MyVictim = {
-	createFoo: function(){
-		return {
-			iAmWellTested: function(){ return false; }
-		};
-	}
+    createFoo: function(){
+        return {
+            iAmWellTested: function(){ return false; }
+        };
+    }
 };
 
 
 describe( "my-feature" , function(){
 
 
-	// TODO: Don't eXclude that test.
-	xit( "Has tests" , function( done ){
+    // TODO: Don't eXclude that test.
+    xit( "Has tests" , function( done ){
 
-		const victim = MyVictim.createFoo();
+        const victim = MyVictim.createFoo();
 
-		expect( victim.iAmWellTested() ).toBe( true );
+        expect( victim.iAmWellTested() ).toBe( true );
 
-		done();
-	});
+        done();
+    });
 
 
 });
