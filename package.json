@@ -1,6 +1,6 @@
 {
   "name": "apikana",
-  "version": "0.4.16",
+  "version": "0.4.17-SNAPSHOT",
   "description": "Integrated tools for REST API design - ｱﾋﾟ",
   "main": "index.js",
   "bin": {
@@ -8,7 +8,7 @@
     "apikana-serve": "./bin/apikana-serve"
   },
   "scripts": {
-    "test": "echo \"No test specified\"",
+    "test": "node test/runner.js",
     "build": "browserify src/browserify.js -t brfs -i source-map-support > lib/browserify.js",
     "test-build": "cd test && node ../bin/apikana start --javaPackage=apikana.test --log=info",
     "test-deploy": "cd test && node ../bin/apikana start --javaPackage=apikana.test --deploy",
@@ -62,6 +62,8 @@
     "brfs": "1.4.3",
     "browserify": "13.0.0",
     "crlf": "1.1.0",
-    "docson": "1.0.2"
+    "cross-env": "^5.2.0",
+    "docson": "1.0.2",
+    "jasmine": "^3.3.0"
   }
 }
