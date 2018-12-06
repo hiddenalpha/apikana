@@ -11,18 +11,17 @@ if( require.main == module ) setTimeout( main );
 
 
 function main(){
-	const stdout = process.stdout;
 
 	exitWhenEnvNotOk();
 
-	if(DEBUG) stdout.write( "[DEBUG] Create jasmine instance\n" );
+	if(DEBUG) console.log( "\x1b[36m[DEBUG] Create jasmine instance.\x1b[39m" );
 	const jasmine = new Jasmine();
 
 	const configFilePath = __dirname.replace(/\\/g,'/') + "/jasmine.config.json";
-	if(DEBUG) stdout.write( "[DEBUG] Load jasmine config '"+ configFilePath +"'\n" );
+	if(DEBUG) console.log( "\x1b[36m[DEBUG] Load jasmine config '"+ configFilePath +"'.\x1b[39m" );
 	jasmine.loadConfigFile( configFilePath );
 
-	if(DEBUG) stdout.write( "[DEBUG] Execute jasmine tests now\n" );
+	if(DEBUG) console.log( "\x1b[36m[DEBUG] Execute jasmine tests now.\x1b[39m" );
 	jasmine.execute();
 }
 
@@ -35,14 +34,14 @@ function exitWhenEnvNotOk(){
 	if( !envPath || envPath.indexOf(cwd) == -1 ){ printAndExit(); }
 
 	function printAndExit(){
-		console.log( "[ERROR] Make sure projects root dir is included in NODE_PATH:" );
-		console.log( "[ERROR] " );
-		console.log( "[ERROR]     export NODE_PATH=`pwd`" );
-		console.log( "[ERROR] " );
-		console.log( "[ERROR] Or if you're on windows:" );
-		console.log( "[ERROR] " );
-		console.log( '[ERROR]     set "NODE_PATH='+process.cwd()+'\\"' );
-		console.log( "[ERROR] " );
+		console.log( "\x1b[31m[ERROR]\x1b[39m Make sure projects root dir is included in NODE_PATH:" );
+		console.log( "\x1b[31m[ERROR]\x1b[39m " );
+		console.log( "\x1b[31m[ERROR]\x1b[39m     export NODE_PATH=`pwd`" );
+		console.log( "\x1b[31m[ERROR]\x1b[39m " );
+		console.log( "\x1b[31m[ERROR]\x1b[39m Or if you're on windows:" );
+		console.log( "\x1b[31m[ERROR]\x1b[39m " );
+		console.log( '\x1b[31m[ERROR]\x1b[39m     set "NODE_PATH='+process.cwd()+'\\"' );
+		console.log( "\x1b[31m[ERROR]\x1b[39m " );
 		process.exit( 1 );
 	}
 }
