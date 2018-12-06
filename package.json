@@ -62,7 +62,6 @@
     "brfs": "1.4.3",
     "browserify": "13.0.0",
     "crlf": "1.1.0",
-    "cross-env": "^5.2.0",
     "docson": "1.0.2",
     "jasmine": "^3.3.0"
   }
