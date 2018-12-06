@@ -4,9 +4,11 @@
 const Jasmine = require( "jasmine" );
 
 const DEBUG = typeof(process.env.DEBUG) != "undefined";
+const NODE_PATH = process.env.NODE_PATH;
 
 
-if( require.main == module ) setImmediate( main );
+if( require.main == module ) setTimeout( main );
+
 
 function main(){
 	const stdout = process.stdout;
@@ -26,9 +28,7 @@ function main(){
 
 
 function exitWhenEnvNotOk(){
-	const envPath = process.env.NODE_PATH
-		? process.env.NODE_PATH.replace(/\\/g,'/')
-		: null;
+	const envPath = NODE_PATH ? NODE_PATH.replace(/\\/g,'/') : null;
 	const cwd = process.cwd().replace( /\\/g , '/' );
 
 	// Check if our cwd (hopefully our projects root) exists in NODE_PATH.
