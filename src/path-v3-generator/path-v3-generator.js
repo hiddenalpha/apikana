@@ -8,6 +8,7 @@ exports.createPathV3Generator = createPathV3Generator;
 
 const Stream = require( "stream" );
 
+const JavaGen = require('src/java-gen');
 const PathV3Utils = require('./pathV3Utils');
 const UrlUtils = require('src/url-utils');
 
@@ -20,9 +21,11 @@ function createPathV3Generator( options ) {
     };
     function createReadable(){
         var isRunning = false;
+        // Evaluation of apiName simply copy-pasted from 2ndGen path generator.
+        const rootClassName = JavaGen.classOf((options.openApi.info || {}).title || '');
         const rootNode = transformPathsToTree( options.openApi.paths );
         const fileBeginReadable = PathV3Utils.streamFromString( "package "+ options.javaPackage +".path;\n\n" );
-        const rootClassReadable = createClassReadable( "RootClassName" , rootNode );
+        const rootClassReadable = createClassReadable( rootClassName , rootNode );
         return PathV3Utils.streamConcat([ fileBeginReadable , rootClassReadable ]);
     }
     function throwIfPathV3GeneratorOptionsBad( options ){
