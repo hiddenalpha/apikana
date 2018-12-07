@@ -6,7 +6,7 @@ exports.createPathV3Generator = createPathV3Generator;
 
 // Private ///////////
 
-const stream = require( "stream" );
+const Stream = require( "stream" );
 
 const pathV3Utils = require('./pathV3Utils');
 const UrlUtils = require('src/url-utils');
@@ -48,13 +48,13 @@ function createClassReadable( name , node ){
     // Create our own readable which also will consume above prepared streams
     // to embed them as nested classes.
     var isRunning = false;
-    const readable = new stream.Readable({ read:function read( n ){
+    const readable = new Stream.Readable({ read:function read( n ){
         if( isRunning ){ return; }else{ isRunning=true; }
         readable.push( "public static class "+ name +" {\n" ); // Start of class
         readable.push( "\tprivate "+ name +"(){}\n" ); // Private ctor
         readable.push( "\n" );
         // This classes constants
-        readable.push( '\tpublic static final String PATH = BASE_PATH + "/'+ segmentStack.join('/') +'";\n' );
+        readable.push( '\tpublic static final String RESOURCE = "/'+ segmentStack.join('/') +'";\n' );
         //
         readable.push( "\n" );
         (function loopNextSubClass( iSubClass ){

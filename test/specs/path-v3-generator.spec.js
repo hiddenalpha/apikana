@@ -25,48 +25,6 @@ describe( "path-v3-generator" , ()=>{
     });
 
 
-    it( "Every path constant wears a leading slash and no trailing one" , ( done )=>{
-        const api = {
-            "paths": {
-                "/store-inventory": null,
-                "/2nd/try": null,
-                "/what.about.dots": null,
-                "/are/you/sure?": null,
-                "/are/you/a-genious": null,
-                "/a space": null,
-            }
-        };
-
-        // Setup & configure a generator instance.
-        const victim = PathV3Generator.createPathV3Generator({
-            openApi: api,
-            javaPackage: "com.example",
-        });
-
-        victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
-            .then( assertResult )
-        ;
-
-        function assertResult( result ){
-            const lines = result.split( "\n" );
-            var pathCount = 0;
-            for( var iLine=0 ; iLine<lines.length ; ++iLine ){
-                const line = lines[ iLine ];
-                // Extract the generated path.
-                const groups = /.*public static final String PATH = BASE_PATH \+ "(.+)";$/.exec( line );
-                if( groups == null ){ continue; }
-                const value = groups[1];
-                expect( value ).toMatch( /^\// ); // MUST HAVE leading slash.
-                expect( value ).toMatch( /[^\/]$/ ); // MUST NOT HAVE trailing slash.
-                pathCount += 1;
-            }
-            expect( pathCount ).toBe( 10 );
-            done();
-        }
-    });
-
-
     xit( "Generates path classes named by scheme DomainNameApi" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
@@ -181,12 +139,21 @@ describe( "path-v3-generator" , ()=>{
     });
 
 
-    xit( "Provides RESOURCE identifier with leading, but without trailing slash" , function( done ){
+    it( "Provides RESOURCE identifier with leading, but without trailing slash" , function( done ){
         // Original requirement:
         // |   On every such identifier there's a reserved identifier "RESOURCE" available. This identifier is a String containing the full path, without a trailing slash.
+
+        // Setup & configure a generator instance.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
-                paths: {}
+                "paths": {
+                    "/store-inventory": null,
+                    "/2nd/try": null,
+                    "/what.about.dots": null,
+                    "/are/you/sure?": null,
+                    "/are/you/a-genious": null,
+                    "/a space": null,
+                }
             },
             javaPackage: "com.example",
         });
@@ -197,7 +164,18 @@ describe( "path-v3-generator" , ()=>{
         ;
 
         function assertResult( result ){
-            expect( "No-asserts" ).toBe( "Good-asserts" );
+            const lines = result.split( "\n" );
+            var pathCount = 0;
+            for( var iLine=0 ; iLine<lines.length ; ++iLine ){
+                // Extract the generated path.
+                const groups = /.*public static final String RESOURCE = "(.+)";$/.exec( lines[iLine] );
+                if( groups == null ){ continue; }
+                const value = groups[1];
+                expect( value ).toMatch( /^\// ); // MUST HAVE leading slash.
+                expect( value ).toMatch( /[^\/]$/ ); // MUST NOT HAVE trailing slash.
+                pathCount += 1;
+            }
+            expect( pathCount ).toBe( 10 );
             done();
         }
     });
@@ -295,7 +273,9 @@ describe( "path-v3-generator" , ()=>{
         //        There will either only the default or the variable be available. But not both.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
-                paths: {}
+                paths: {
+                    "/my/foo/v1/pet/{petId}/info": null,
+                }
             },
             javaPackage: "com.example",
         });
@@ -306,7 +286,19 @@ describe( "path-v3-generator" , ()=>{
         ;
 
         function assertResult( result ){
-            expect( "No-asserts" ).toBe( "Good-asserts" );
+            const lines = result.split( '\n' );
+            // Expected names in sequence with 'petId' wearing a trailing dollar sign.
+            const expectedClassNames = [ "MyFoo" , "pet" , "petId$" , "info" ];
+            var expectedClassIdx = 0;
+            for( var i=0 ; i<lines.length ; ++i ){
+                const m = /^\s*public static class (.*) {$/.exec( lines[i] );
+                if( m ){ // Line matched
+                    const className = m[1];
+                    expect( className ).toEqual( expectedClassNames[expectedClassIdx] );
+                    expectedClassIdx += 1;
+                }
+            }
+            expect( expectedClassIdx ).toEqual( 4 );
             done();
         }
     });
@@ -316,7 +308,13 @@ describe( "path-v3-generator" , ()=>{
         //    If a segment contains chars not allowed in java identifiers then they will be replaced with _ (underscore).
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
-                paths: {}
+                paths: {
+                    "/store-inventory": null,
+                    "/what.about.dots": null,
+                    "/are/you/sure?": null,
+                    "/are/you/a-genious": null,
+                    "/a space": null,
+                }
             },
             javaPackage: "com.example",
         });
@@ -327,7 +325,25 @@ describe( "path-v3-generator" , ()=>{
         ;
 
         function assertResult( result ){
-            expect( "No-asserts" ).toBe( "Good-asserts" );
+            const lines = result.split( '\n' );
+            const segmentNames = [];
+            for( var i=0 ; i<lines.length ; ++i ){
+                const m = /^\s*public static class (.*) {$/.exec( lines[i] );
+                if( m ){
+                    segmentNames.push(m[1]);
+                }
+            }
+            const expectedSegmentNames = [
+                "store_inventory",
+                "what_about_dots",
+                "are", "you", "sure_",
+                /*  same   */ "a_genious",
+                "a_space",
+            ];
+            expect( segmentNames.length ).toEqual( expectedSegmentNames.length );
+            for( var i=0 ; i<segmentNames.length ; ++i ){
+                expect( segmentNames[i] ).toEqual( expectedSegmentNames[i] );
+            }
             done();
         }
     });
@@ -337,18 +353,25 @@ describe( "path-v3-generator" , ()=>{
         // In case of a name conflict due to this replacement, Apikana will fail-fast.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
-                paths: {}
+                paths: {
+                    "/my/foo/v1/number1": null,
+                    "/my/foo/v1/number2": null,
+                }
             },
             javaPackage: "com.example",
         });
 
         victim.readable()
             .pipe( PathV3Utils.createStringWritable() )
-            .then( assertResult )
+            .then(function methodWhichNeverShouldBeCalled( result ){
+                expect( "This method" ).toBe( "never called." );
+                done();
+            })
+            .catch( onError )
         ;
 
-        function assertResult( result ){
-            expect( "No-asserts" ).toBe( "Good-asserts" );
+        function onError( err ) {
+            expect( "Error message" ).toBe( "from correct reason" );
             done();
         }
     });
@@ -358,7 +381,18 @@ describe( "path-v3-generator" , ()=>{
         //    If a segment is same as a reserved word in java then it will wear an additional _ (underscore) at the begin (end).
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
-                paths: {}
+                paths: {
+                    // Some reserved words found at "https://www.thoughtco.com/reserved-words-in-java-2034200".
+                    "/abstract/assert/boolean/break/byte/case": null,
+                    "/catch/char/class/const/continue/default": null,
+                    "/double/do/else/enum/extends/false": null,
+                    "/final/finally/float/for/goto/if": null,
+                    "/implements/import/instanceof/int/interface/long": null,
+                    "/native/new/null/package/private/protected": null,
+                    "/public/return/short/static/strictfp/super": null,
+                    "/switch/synchronized/this/throw/throws/transient": null,
+                    "/true/try/void/volatile/while": null,
+                }
             },
             javaPackage: "com.example",
         });
@@ -369,7 +403,29 @@ describe( "path-v3-generator" , ()=>{
         ;
 
         function assertResult( result ){
-            expect( "No-asserts" ).toBe( "Good-asserts" );
+            const lines = result.split( '\n' );
+            const segmentNames = [];
+            for( var i=0 ; i<lines.length ; ++i ){
+                const m = /^\s*public static class (.*) {$/.exec( lines[i] );
+                if( m ){
+                    segmentNames.push( m[1] );
+                }
+            }
+            const expectedSegmentNames = [
+                "_abstract", "_assert", "_boolean", "_break", "_byte", "_case",
+                "_catch", "_char", "_class", "_const", "_continue", "_default",
+                "_double", "_do", "_else", "_enum", "_extends", "_false",
+                "_final", "_finally", "_float", "_for", "_goto", "_if",
+                "_implements", "_import", "_instanceof", "_int", "_interface", "_long",
+                "_native", "_new", "_null", "_package", "_private", "_protected",
+                "_public", "_return", "_short", "_static", "_strictfp", "_super",
+                "_switch", "_synchronized", "_this", "_throw", "_throws", "_transient",
+                "_true", "_try", "_void", "_volatile", "_while",
+            ];
+            expect( segmentNames.length ).toEqual( expectedSegmentNames.length );
+            for( var i=0 ; i<segmentNames.length ; ++i ){
+                expect( segmentNames[i] ).toEqual( expectedSegmentNames[i] );
+            }
             done();
         }
     });
