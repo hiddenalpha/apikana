@@ -1,6 +1,6 @@
 {
   "name": "apikana",
-  "version": "0.4.17-SNAPSHOT",
+  "version": "0.4.16",
   "description": "Integrated tools for REST API design - ｱﾋﾟ",
   "main": "index.js",
   "bin": {
@@ -63,6 +63,6 @@
     "browserify": "13.0.0",
     "crlf": "1.1.0",
     "docson": "1.0.2",
-    "jasmine": "^3.3.0"
+    "jasmine": "3.3.0"
   }
 }

@@ -4,10 +4,10 @@
 const UrlUtils = require("src/url-utils");
 
 
-describe( "url-utils" , function(){
+describe( "url-utils.dropLeadingSlashes" , function(){
 
 
-    it( "dropLeadingSlashes drops leading slashes" , function( done ){
+    it( "drops leading slashes" , function( done ){
         // Shorthand for simpler testing.
         const dls = UrlUtils.dropLeadingSlashes.bind( UrlUtils );
 

@@ -30,7 +30,7 @@ function exitWhenEnvNotOk(){
     const envPath = NODE_PATH ? NODE_PATH.replace(/\\/g,'/') : null;
     const cwd = process.cwd().replace( /\\/g , '/' );
 
-    // Check if our cwd (assuming its our projects root) exists in NODE_PATH.
+    // Check if our cwd (assuming its our project root dir) exists in NODE_PATH.
     // This enables us to use paths relative to our projects root to write our
     // include statements in our tests.
     if( !envPath || envPath.indexOf(cwd) == -1 ){ printAndExit(); }
