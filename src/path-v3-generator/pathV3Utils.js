@@ -1,8 +1,12 @@
 "use strict";
 
 
-exports.createPromisifiedWrite = createPromisifiedWrite;
+// exports.createPromisifiedWrite = createPromisifiedWrite;
 exports.createStringWritable = createStringWritable;
+
+exports.streamConcat = streamConcat;
+
+exports.streamFromString = streamFromString;
 
 
 // Impl //////////////
@@ -62,4 +66,45 @@ function createStringWritable() {
 		chunks = null;
 	});
 	return writable;
+}
+
+
+/**
+ * @param streams {Array<Readable>}
+ * @return {Readable}
+ *      A readable containing all passed in readables.
+ */
+function streamConcat( streams ){
+    streams = streams.slice( 0 ); // Make a copy to resist changes from outside.
+    const that = new stream.Readable({ read:read });
+    var isRunning = false;
+    return that;
+    function read( n ){
+        if( isRunning ){ return; }else{ isRunning=true; }
+        (function handleNextSrcStream(){
+            const stream = streams.shift();
+            if( stream ) {
+                stream.on( "data" , that.push.bind(that) );
+                stream.on( "end" , handleNextSrcStream );
+                stream.on( "error" , that.emit.bind(that,"error") );
+            }else{ // All inputs streamed.
+                that.push( null );
+            }
+        }());
+    }
+}
+
+
+/**
+ * @param str {string}
+ * @return {Readable<Buffer>}
+ *      A Readable which streams the passed string.
+ */
+function streamFromString( str ) {
+    const that = new stream.Readable({ read:read });
+    return that;
+    function read( n ){
+        that.push( str );
+        that.push( null );
+    }
 }
