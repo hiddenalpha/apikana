@@ -25,7 +25,7 @@ describe( "path-v3-generator" , ()=>{
     });
 
 
-    xit( "Generates path classes named by scheme DomainNameApi" , function( done ){
+    xit( "Generates path classes named by scheme DomainName" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 paths: {}
@@ -49,13 +49,13 @@ describe( "path-v3-generator" , ()=>{
                     className = m[1];
                 }
             }
-            expect( className ).toEqual( "To be defined (code_20181207134301)" );
+            expect( className ).toEqual( "MyFooApi" );
             done();
         }
     });
 
 
-    xit( "Generates path classes which reside in package 'com.example.lib.my.api.v1.path'" , function( done ){
+    it( "Generates path classes which reside in package 'com.example.lib.my.api.v1.path'" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 paths: {}
@@ -364,7 +364,7 @@ describe( "path-v3-generator" , ()=>{
         victim.readable()
             .pipe( PathV3Utils.createStringWritable() )
             .then(function methodWhichNeverShouldBeCalled( result ){
-                expect( "This method" ).toBe( "never called." );
+                expect( "This method" ).toBe( "never called" );
                 done();
             })
             .catch( onError )

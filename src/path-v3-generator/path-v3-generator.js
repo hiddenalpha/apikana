@@ -8,7 +8,7 @@ exports.createPathV3Generator = createPathV3Generator;
 
 const Stream = require( "stream" );
 
-const pathV3Utils = require('./pathV3Utils');
+const PathV3Utils = require('./pathV3Utils');
 const UrlUtils = require('src/url-utils');
 
 
@@ -21,8 +21,9 @@ function createPathV3Generator( options ) {
     function createReadable(){
         var isRunning = false;
         const rootNode = transformPathsToTree( options.openApi.paths );
+        const fileBeginReadable = PathV3Utils.streamFromString( "package "+ options.javaPackage +".path;\n\n" );
         const rootClassReadable = createClassReadable( "RootClassName" , rootNode );
-        return rootClassReadable;
+        return PathV3Utils.streamConcat([ fileBeginReadable , rootClassReadable ]);
     }
     function throwIfPathV3GeneratorOptionsBad( options ){
         if( !options.openApi ) throw Error("Arg 'options.openApi' missing.");
