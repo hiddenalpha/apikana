@@ -9,6 +9,7 @@ exports.createPathV3Generator = createPathV3Generator;
 const Stream = require( "stream" );
 
 const JavaGen = require('src/java-gen');
+const Log = require('src/log');
 const PathV3Utils = require('./pathV3Utils');
 const UrlUtils = require('src/url-utils');
 
@@ -20,7 +21,6 @@ function createPathV3Generator( options ) {
         "readable": createReadable,
     };
     function createReadable(){
-        var isRunning = false;
         // Evaluation of apiName simply copy-pasted from 2ndGen path generator.
         const rootClassName = JavaGen.classOf((options.openApi.info || {}).title || '');
         const rootNode = transformPathsToTree( options.openApi.paths );
@@ -34,6 +34,11 @@ function createPathV3Generator( options ) {
         if( !options.javaPackage ) throw Error("Arg 'options.javaPackage' missing.");
         if( typeof(options.javaPackage) != "string" ) throw Error( "Arg 'options.javaPackage' string expected but got '"+typeof(options.javaPackage)+"'" );
         if( !/^(?![0-9])(?!.*\.[0-9])[A-Za-z0-9.]+$/.test(options.javaPackage) ) throw Error( "Illegal chars in javaPackage" );
+
+        if( !options.basePath ){
+            Log.debug("'options.basePath' not set. Assume empty.");
+            options.basePath = "";
+        }
     }
 }
 
