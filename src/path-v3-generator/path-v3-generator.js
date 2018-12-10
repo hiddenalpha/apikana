@@ -88,21 +88,32 @@ function createClassReadable( name , node , segmentStack ){
     }});
 
     function handleSubClass( subClass , doneCback ){
-        readable.push( "\t" );
-        subClass.on( "data" , function( chunk ){
-            // Append indentation
-            chunk = chunk.toString().replace( /\n/g , '\n\t' );
-            // Then write back as our own data.
-            readable.push( chunk );
-        });
-        subClass.on( "end" , function(){
-            // Continue with next sub class when current is done.
-            readable.push( "\n" );
-            doneCback();
-        });
+        subClass
+            .pipe(PathV3Utils.createLinePrefixStream({ prefix:"\t" }))
+            .on( "data" , readable.push.bind(readable) )
+            .on( "end" ,  doneCback )
+            .on( "error" , readable.emit.bind(readable,"error") )
+        ;
     }
 
     return readable;
+}
+
+
+/**
+ * <p>Creates a 'BASED' class.</p>
+ */
+function createBasedClass(){
+    const that = new Stream.Readable({ read:read });
+    var isRunning = false;
+    return that;
+    function read( n ){
+        if( isRunning ){ return; }else{ isRunning=true; }
+        that.push( "\tpublic static class BASED {\n" );
+        that.push( "\t\t// TODO: Define that crap.\n" );
+        that.push( "\t}\n" );
+        that.push( null );
+    }
 }
 
 
