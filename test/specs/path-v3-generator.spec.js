@@ -141,13 +141,16 @@ describe( "path-v3-generator" , ()=>{
     });
 
 
-    xit( "Provides RESOURCE identifier with leading, but without trailing slash" , function( done ){
+    it( "Provides RESOURCE identifier with leading, but without trailing slash" , function( done ){
         // Original requirement:
         // |   On every such identifier there's a reserved identifier "RESOURCE" available. This identifier is a String containing the full path, without a trailing slash.
 
         // Setup & configure a generator instance.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
+                "info": {
+                    "title": "My bar API"
+                },
                 "paths": {
                     "/store-inventory": null,
                     "/2nd/try": null,
@@ -183,11 +186,18 @@ describe( "path-v3-generator" , ()=>{
     });
 
 
-    xit( "Provides COLLECTION identifier with leading and trailing slash" , function( done ){
-        // On every such identifier there's a reserved identifier "COLLECTION" available. This identifier is a String containing the full path, wearing a trailing slash.
+    it( "Provides COLLECTION identifier with leading and trailing slash" , function( done ){
+        // Hint: This test doesn't check if there's a leading slash.
+
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
-                paths: {}
+                paths: {
+                    "/customer/": null,
+                    "/customer/{id}/": null,
+                    "/customer/{id}/name": null,
+                    "/customer/{id}/contact": null,
+                    "/customer/{id}/contact/postal": null,
+                }
             },
             javaPackage: "com.example",
         });
@@ -198,14 +208,29 @@ describe( "path-v3-generator" , ()=>{
         ;
 
         function assertResult( result ){
-            expect( "No-asserts" ).toBe( "Good-asserts" );
+            const lines = result.split( '\n' );
+            const collectionValues = [];
+            for( var i=0 ; i<lines.length ; ++i ){
+                const m = /^\s*public static final String COLLECTION = (.*);$/.exec( lines[i] );
+                if( m ){
+                    collectionValues.push( m[1].trim() );
+                }
+            }
+            const iEnd = 6;
+            expect( collectionValues.length ).toEqual( iEnd );
+            for( var i=0 ; i<iEnd ; ++i ){
+                expect( collectionValues[i] ).toEqual( 'RESOURCE + "/"' );
+            }
             done();
         }
     });
 
 
     xit( "Provides BASED identifier where we can continue with following-up segments" , function( done ){
-        //    Also on every segment identifier there's a "BASED" available. After this identifier, a dev can continue to list follow-up path segments same as when "BASE" wouldn't be used.
+        // Original spec:
+        // Also on every segment identifier there's a "BASED" available. After this
+        // identifier, a dev can continue to list follow-up path segments same as when
+        // "BASE" wouldn't be used.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 paths: {}
@@ -275,6 +300,9 @@ describe( "path-v3-generator" , ()=>{
         //        There will either only the default or the variable be available. But not both.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
+                info: {
+                    title: "foo bar api",
+                },
                 paths: {
                     "/my/foo/v1/pet/{petId}/info": null,
                 }

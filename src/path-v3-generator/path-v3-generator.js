@@ -43,15 +43,15 @@ function createPathV3Generator( options ) {
 }
 
 
-function createClassReadable( name , node ){
+function createClassReadable( name , node , segmentStack ){
 
-    const segmentStack = Array.isArray(name) ? name : [name];
+    segmentStack = Array.isArray(segmentStack) ? segmentStack : [name];
 
     // Setup a readable for every subClass
     const subClasses = [];
     Object.keys( node ).forEach(function( subName ){
         // Go recursive here.
-        subClasses.push(createClassReadable( segmentStack.concat(subName) , node[subName] ));
+        subClasses.push(createClassReadable( subName , node[subName] , segmentStack.concat([subName]) ));
     });
 
     // Create our own readable which also will consume above prepared streams
@@ -59,11 +59,18 @@ function createClassReadable( name , node ){
     var isRunning = false;
     const readable = new Stream.Readable({ read:function read( n ){
         if( isRunning ){ return; }else{ isRunning=true; }
-        readable.push( "public static class "+ name +" {\n" ); // Start of class
-        readable.push( "\tprivate "+ name +"(){}\n" ); // Private ctor
+        const className = segmentToConstantName( name );
+        readable.push( "public static class "+ className +" {\n" ); // Start of class
+        readable.push( "\tprivate "+ className +"(){}\n" ); // Private ctor
         readable.push( "\n" );
-        // This classes constants
+        // RESOURCE and COLLECTION constants of this class.
         readable.push( '\tpublic static final String RESOURCE = "/'+ segmentStack.join('/') +'";\n' );
+        readable.push( '\tpublic static final String COLLECTION = RESOURCE + "/";\n' );
+        // BASED of this class
+        readable.push( "\n" );
+        readable.push( "\tpublic static class BASED {\n" );
+        readable.push( "\t\t// TODO: Define that crap.\n" );
+        readable.push( "\t}\n" );
         //
         readable.push( "\n" );
         (function loopNextSubClass( iSubClass ){
@@ -83,7 +90,7 @@ function createClassReadable( name , node ){
     function handleSubClass( subClass , doneCback ){
         readable.push( "\t" );
         subClass.on( "data" , function( chunk ){
-            // Append intentation
+            // Append indentation
             chunk = chunk.toString().replace( /\n/g , '\n\t' );
             // Then write back as our own data.
             readable.push( chunk );
@@ -127,7 +134,7 @@ function transformPathsToTree( paths ){
  */
 function splitAllPathsToArrays( paths ){
     const keys = Object.keys( paths );
-    result = [];
+    const result = [];
     for( var i=0 ; i<keys.length ; ++i ){
         result[i] = keys[i].split( "/" );
     }
@@ -156,26 +163,45 @@ function arrange2dSegmentsAsTree( paths ){
     }
 }
 
-function pathToConstantName( path ) {
-    var segments = path.replace(/(^\/|\/$)/,"").split( '/' );
-    for( var i=0 ; i<segments.length ; ++i ){
-        const segment = segments[i];
-        if( pathSegmentIsVariable(segment) ){
-            // Drop surrounding curly braces.
-            segments[i] = segment.substr( 1 , segment.length-2 );
-        }else{
-            segments[i] = segment.toUpperCase();
-        }
-        segments[i] = segments[i]
-            // Replace invalid chars
-            .replace( /[^[A-Za-z0-9$_]/g , '_' )
-            // Also replace leading numbers
-            .replace( /^[0-9]/g , '_' )
-        ;
+
+/**
+ * @param segment {string}
+ *      Path segment.
+ * @return {string}
+ *      Java identifier for specified path segment.
+ */
+function segmentToConstantName( segment ) {
+    var ans;
+    if( pathSegmentIsVariable(segment) ){
+        // Drop surrounding curly braces.
+        ans = segment.substr( 1 , segment.length-2 );
+        // Add a dollar sign
+        ans += '$';
+    }else{
+        // Use segment as is.
+        ans = segment;
     }
-    return segments.join( '_' );
+    ans = escapeForJavaIdentifier( ans );
+    return ans;
 }
+
 
 function pathSegmentIsVariable( segment ) {
     return /^{.*}$/.test( segment );
+}
+
+
+/**
+ * @param str {string}
+ * @return {string}
+ *      Passed in value where all special chars are replaced by an underscore
+ *      char.
+ */
+function escapeForJavaIdentifier( str ){
+    if( typeof(str)!=="string" ){ debugger; throw Error("Arg 'str' expected to be string."); }
+    // Replace every char thats not inside A-Z, a-z, 0-9 underscore or dollar
+    // sign. (Yes: There are several more valid chars we shouldn't replace. But
+    // its much simpler to quick-n-dirty replace these too)
+    str = str.replace( /[^A-Za-z0-9_$]/g , '_' );
+    return str;
 }
