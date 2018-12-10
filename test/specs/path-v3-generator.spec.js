@@ -1,4 +1,5 @@
 
+const JavaParser = require("java-parser");
 const Yaml = require("yamljs");
 const PathV3Generator = require("src/path-v3-generator/path-v3-generator");
 const PathV3Utils = require("src/path-v3-generator/pathV3Utils");
@@ -233,7 +234,12 @@ describe( "path-v3-generator" , ()=>{
         // "BASE" wouldn't be used.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
-                paths: {}
+                info: {
+                    title: "foo bar api",
+                },
+                paths: {
+                    "/pet/{id}/foo/bar": null,
+                },
             },
             javaPackage: "com.example",
         });
@@ -244,7 +250,11 @@ describe( "path-v3-generator" , ()=>{
         ;
 
         function assertResult( result ){
-            expect( "No-asserts" ).toBe( "Good-asserts" );
+            const compileUnit = JavaParser.parse( result , {});
+            const clazz = compileUnit.types[0];
+            const based = clazz.bodyDeclarations[3];
+            expect( based.name ).toEqual( "BASED" );
+            // const asdf = based.;
             done();
         }
     });
