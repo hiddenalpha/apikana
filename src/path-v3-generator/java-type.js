@@ -7,7 +7,7 @@ exports.createJavaType = createJavaType;
 
 // Private ////////////////////////////////////////////////////////////////////
 
-const pathV3Utils = require("./pathV3Utils");
+const pathV3Utils = require("../stream-utils");
 
 
 function createJavaType( props ){
