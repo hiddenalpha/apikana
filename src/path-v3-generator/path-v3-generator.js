@@ -10,8 +10,10 @@ const Stream = require( "stream" );
 
 const JavaGen = require('src/java-gen');
 const Log = require('src/log');
-const PathV3Utils = require('./pathV3Utils');
+const StreamUtils = require('../stream-utils');
 const UrlUtils = require('src/url-utils');
+
+function noop(){}
 
 
 function createPathV3Generator( options ) {
@@ -24,9 +26,9 @@ function createPathV3Generator( options ) {
         // Evaluation of apiName simply copy-pasted from 2ndGen path generator.
         const rootClassName = JavaGen.classOf((options.openApi.info || {}).title || '');
         const rootNode = transformPathsToTree( options.openApi.paths );
-        const fileBeginReadable = PathV3Utils.streamFromString( "package "+ options.javaPackage +".path;\n\n" );
+        const fileBeginReadable = StreamUtils.streamFromString( "package "+ options.javaPackage +".path;\n\n" );
         const rootClassReadable = createClassReadable( rootClassName , rootNode );
-        return PathV3Utils.streamConcat([ fileBeginReadable , rootClassReadable ]);
+        return StreamUtils.streamConcat([ fileBeginReadable , rootClassReadable ]);
     }
     function throwIfPathV3GeneratorOptionsBad( options ){
         if( !options.openApi ) throw Error("Arg 'options.openApi' missing.");
@@ -39,6 +41,89 @@ function createPathV3Generator( options ) {
             Log.debug("'options.basePath' not set. Assume empty.");
             options.basePath = "";
         }
+    }
+}
+
+
+if( require.main == module ) setTimeout( main );
+function main(){
+    const resourceField = createResourceField({
+        path: "///this/is/my/path////",
+    });
+    const collectionField = createCollectionField();
+    const basedClass = createJavaCustomType({
+        name: "BASED",
+        isStatic: true,
+        bodyReadable: null,
+    });
+    const person = createJavaCustomType({
+        name: "Person",
+        isStatic: false,
+        bodyReadable: StreamUtils.streamConcat([
+            resourceField.readable(),
+            collectionField.readable(),
+            basedClass.readable(),
+        ]),
+    });
+    person.readable()
+        .pipe( process.stdout )
+    ;
+}
+
+
+function createJavaClass( options ) {
+    return {
+        readable: createReadable
+    };
+    function createReadable() {
+        const that = new Stream.Readable({ read:noop });
+        const rootClass = createJavaCustomType({
+            name: "TODO_MyClassName",
+            isStatic: false,
+            bodyReadable: createBodyReadable(),
+        });
+        rootClass.readable()
+            .on( "data" , that.push.bind(that) )
+            .on( "error" , that.emit.bind(that,"error") )
+            .on( "end" , that.emit.bind(that,"end") )
+        ;
+        return that;
+    }
+    function createBodyReadable(){
+        const bodyReadable = new Stream.Readable({ read:noop });
+        bodyReadable.push( "/* TODO: This is the body. */\n" );
+        bodyReadable.push( null );
+        return bodyReadable;
+    }
+}
+
+
+function createResourceField( options ){
+    if( !options ) options = {};
+    if( !options.path ) throw Error( "Arg 'options.path' missing." );
+    const path = options.path;
+    options = null;
+    return {
+        readable: createReadable,
+    };
+    function createReadable(){
+        const that = new Stream.Readable({ read:noop });
+        that.push( 'public static final String RESOURCE = "'+ path +'";\n' );
+        that.push( null );
+        return that;
+    }
+}
+
+
+function createCollectionField() {
+    return {
+        readable: createReadable,
+    };
+    function createReadable(){
+        const that = new Stream.Readable({ read:noop });
+        that.push( 'public static final String COLLECTION = RESOURCE + "/";\n' );
+        that.push( null );
+        return that;
     }
 }
 
@@ -68,19 +153,25 @@ function createClassReadable( name , node , segmentStack ){
         readable.push( '\tpublic static final String COLLECTION = RESOURCE + "/";\n' );
         // BASED of this class
         readable.push( "\n" );
-        readable.push( "\tpublic static class BASED {\n" );
-        readable.push( "\t\t// TODO: Define that crap.\n" );
-        readable.push( "\t}\n" );
-        //
-        readable.push( "\n" );
-        (function loopNextSubClass( iSubClass ){
+
+        createBasedClass()
+            .on( "data" , readable.push.bind(readable) )
+            .on( "end" , onBaseClassWritten )
+            .on( "error" , readable.emit.bind(readable,"error") )
+        ;
+        function onBaseClassWritten(){
+            readable.push( "\n" );
+            loopNextSubClass();
+        }
+        function loopNextSubClass( iSubClass ){
+            if( !iSubClass ) iSubClass = 0;
             if( iSubClass < subClasses.length ){
                 const subClass = subClasses[iSubClass];
                 handleSubClass( subClass , loopNextSubClass.bind(0,iSubClass+1) );
             }else{ // EndOfLoop
                 onSubClassesPrinted();
             }
-        }( 0 ));
+        }
         function onSubClassesPrinted(){
             readable.push( "}\n" );
             readable.push( null );
@@ -89,7 +180,7 @@ function createClassReadable( name , node , segmentStack ){
 
     function handleSubClass( subClass , doneCback ){
         subClass
-            .pipe(PathV3Utils.createLinePrefixStream({ prefix:"\t" }))
+            .pipe(StreamUtils.createLinePrefixStream({ prefix:"\t" }))
             .on( "data" , readable.push.bind(readable) )
             .on( "end" ,  doneCback )
             .on( "error" , readable.emit.bind(readable,"error") )
@@ -104,15 +195,55 @@ function createClassReadable( name , node , segmentStack ){
  * <p>Creates a 'BASED' class.</p>
  */
 function createBasedClass(){
-    const that = new Stream.Readable({ read:read });
-    var isRunning = false;
+    const that = new Stream.Readable({ read:noop });
+    that.push( "\tpublic static class BASED {\n" );
+    that.push( "\t\t// TODO: Define that crap.\n" );
+    that.push( "\t\tprivate static int foo = 0;\n" );
+    that.push( "\t}\n" );
+    that.push( null );
     return that;
-    function read( n ){
-        if( isRunning ){ return; }else{ isRunning=true; }
-        that.push( "\tpublic static class BASED {\n" );
-        that.push( "\t\t// TODO: Define that crap.\n" );
-        that.push( "\t}\n" );
-        that.push( null );
+    function noop(){}
+}
+
+
+function createJavaCustomType( options ){
+    // Validate args.
+    if( !options ) options = {};
+    if( !options.name ){ throw Error( "Arg 'options.name' missing." ); }
+    if( typeof(options.isStatic) === "undefined" ) throw Error( "Arg 'options.isStatic' expected to be boolean." );
+    if( typeof(options.bodyReadable)==="undefined" ) throw Error( "Arg 'options.bodyReadable' missing." );
+    // Fetch args.
+    const isStatic = options.isStatic;
+    const typeName = options.name;
+    /** Nullable. Null indicates not to print any body. */
+    const bodyReadable = options.bodyReadable;
+    options = null;
+    //
+    return {
+        readable: createReadable,
+    };
+    function createReadable(){
+        const that = new Stream.Readable({ read:noop });
+        // Start of type.
+        that.push( "public"+(isStatic?" static":"")+" class "+ typeName +" {\n" );
+        // Inject body from passed in stream.
+        if( bodyReadable != null ){
+            bodyReadable
+                // Use filter to indent body.
+                .pipe( StreamUtils.createLinePrefixStream({ prefix:"\t" }) )
+                .on( "data" , that.push.bind(that) )
+                .on( "error" , that.emit.bind(that,"error") )
+                .on( "end" , onBodyWritten )
+            ;
+        }else{
+            onBodyWritten();
+        }
+        function onBodyWritten(){
+            // End of type and end of our stream.
+            that.push( "}\n" );
+            that.push( null );
+        }
+        return that;
     }
 }
 

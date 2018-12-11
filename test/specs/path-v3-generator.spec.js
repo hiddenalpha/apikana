@@ -2,7 +2,7 @@
 const JavaParser = require("java-parser");
 const Yaml = require("yamljs");
 const PathV3Generator = require("src/path-v3-generator/path-v3-generator");
-const PathV3Utils = require("src/path-v3-generator/pathV3Utils");
+const PathV3Utils = require("src/stream-utils");
 
 
 describe( "path-v3-generator" , ()=>{
@@ -227,7 +227,7 @@ describe( "path-v3-generator" , ()=>{
     });
 
 
-    xit( "Provides BASED identifier where we can continue with following-up segments" , function( done ){
+    fit( "Provides BASED identifier where we can continue with following-up segments" , function( done ){
         // Original spec:
         // Also on every segment identifier there's a "BASED" available. After this
         // identifier, a dev can continue to list follow-up path segments same as when
@@ -238,7 +238,7 @@ describe( "path-v3-generator" , ()=>{
                     title: "foo bar api",
                 },
                 paths: {
-                    "/pet/{id}/foo/bar": null,
+                    "/foo/bar/v1/pet/{id}/foo/bar": null,
                 },
             },
             javaPackage: "com.example",
@@ -250,11 +250,14 @@ describe( "path-v3-generator" , ()=>{
         ;
 
         function assertResult( result ){
+            // Check if BASED class exists.
             const compileUnit = JavaParser.parse( result , {});
             const clazz = compileUnit.types[0];
             const based = clazz.bodyDeclarations[3];
-            expect( based.name ).toEqual( "BASED" );
-            // const asdf = based.;
+            expect( based.name.identifier ).toEqual( "BASED" );
+            // Check if BASED class has TBD content.
+            const asdf = based.bodyDeclarations[0];
+            expect( "test" ).toBe( "written" );
             done();
         }
     });
