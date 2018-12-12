@@ -1,3 +1,4 @@
+;"use strict";
 
 const JavaParser = require("java-parser");
 const Yaml = require("yamljs");
@@ -5,7 +6,7 @@ const PathV3Generator = require("src/path-v3-generator/path-v3-generator");
 const PathV3Utils = require("src/stream-utils");
 
 
-describe( "path-v3-generator" , ()=>{
+describe( "PathV3Generator" , ()=>{
 
 
     it( "Failfast when get invoked with an illegal javaPackage" , ( done )=>{
@@ -61,9 +62,12 @@ describe( "path-v3-generator" , ()=>{
     it( "Generates path classes which reside in package 'com.example.lib.my.api.v1.path'" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
-                paths: {}
+                info: {
+                    title: "asdf",
+                },
+                paths: {},
             },
-            javaPackage: "com.example.lib.my.api.v1"
+            javaPackage: "com.example.lib.my.api.v1",
         });
 
         victim.readable()
@@ -170,19 +174,29 @@ describe( "path-v3-generator" , ()=>{
         ;
 
         function assertResult( result ){
-            const lines = result.split( "\n" );
-            var pathCount = 0;
-            for( var iLine=0 ; iLine<lines.length ; ++iLine ){
-                // Extract the generated path.
-                const groups = /.*public static final String RESOURCE = "(.+)";$/.exec( lines[iLine] );
-                if( groups == null ){ continue; }
-                const value = groups[1];
-                expect( value ).toMatch( /^\// ); // MUST HAVE leading slash.
-                expect( value ).toMatch( /[^\/]$/ ); // MUST NOT HAVE trailing slash.
-                pathCount += 1;
+            const compileUnit = JavaParser.parse( result , {});
+            const values = collectAllValuesOfResourceConstants( compileUnit );
+            expect( values.length ).toBe( 34 );
+            for( let i=0 ; i<values.length ; ++i ){
+                const value = values[i];
+                expect( value ).toMatch( /^"\// ); // MUST HAVE leading slash.
+                expect( value ).toMatch( /[^\/]"$/ ); // MUST NOT HAVE trailing slash.
             }
-            expect( pathCount ).toBe( 10 );
             done();
+        }
+        function collectAllValuesOfResourceConstants( node ){
+            const resourceValues = [];
+            createJavaParserNodeIterator( node ).forEach(function( node ){
+                if( node.node==="FieldDeclaration" ){
+                    if( node.fragments.length > 1 ) throw Error( "Unexpected state" );
+                    const name = node.fragments[0].name.identifier;
+                    if( name === "RESOURCE" ){
+                        const value = node.fragments[0].initializer.escapedValue;
+                        resourceValues.push( value );
+                    }
+                }
+            });
+            return resourceValues;
         }
     });
 
@@ -192,6 +206,9 @@ describe( "path-v3-generator" , ()=>{
 
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
+                info: {
+                    title: "asdfsadf",
+                },
                 paths: {
                     "/customer/": null,
                     "/customer/{id}/": null,
@@ -209,25 +226,38 @@ describe( "path-v3-generator" , ()=>{
         ;
 
         function assertResult( result ){
-            const lines = result.split( '\n' );
-            const collectionValues = [];
-            for( var i=0 ; i<lines.length ; ++i ){
-                const m = /^\s*public static final String COLLECTION = (.*);$/.exec( lines[i] );
-                if( m ){
-                    collectionValues.push( m[1].trim() );
-                }
-            }
-            const iEnd = 6;
-            expect( collectionValues.length ).toEqual( iEnd );
-            for( var i=0 ; i<iEnd ; ++i ){
-                expect( collectionValues[i] ).toEqual( 'RESOURCE + "/"' );
+            const compileUnit = JavaParser.parse( result , {});
+            const values = collectAllValuesOfCollectionConstants( compileUnit );
+            expect( values.length ).toBe( 38 );
+            for( let i=0 ; i<values.length ; ++i ){
+                const value = values[i];
+                expect( value ).toEqual( 'RESOURCE + "/"' );
             }
             done();
+        }
+        function collectAllValuesOfCollectionConstants( node ){
+            const resourceValues = [];
+            createJavaParserNodeIterator( node ).forEach(function( node ){
+                if( node.node==="FieldDeclaration" ){
+                    if( node.fragments.length > 1 ) throw Error( "Unexpected state" );
+                    const name = node.fragments[0].name.identifier;
+                    if( name === "COLLECTION" ){
+                        const initializer = node.fragments[0].initializer;
+                        const value =
+                            initializer.leftOperand.identifier +
+                            " "+ initializer.operator +
+                            " "+ initializer.rightOperand.escapedValue
+                        ;
+                        resourceValues.push( value );
+                    }
+                }
+            });
+            return resourceValues;
         }
     });
 
 
-    fit( "Provides BASED identifier where we can continue with following-up segments" , function( done ){
+    xit( "Provides BASED identifier where we can continue with following-up segments" , function( done ){
         // Original spec:
         // Also on every segment identifier there's a "BASED" available. After this
         // identifier, a dev can continue to list follow-up path segments same as when
@@ -251,6 +281,7 @@ describe( "path-v3-generator" , ()=>{
 
         function assertResult( result ){
             // Check if BASED class exists.
+            console.log( result ); // TODO: Drop line.
             const compileUnit = JavaParser.parse( result , {});
             const clazz = compileUnit.types[0];
             const based = clazz.bodyDeclarations[3];
@@ -475,3 +506,24 @@ describe( "path-v3-generator" , ()=>{
 
 
 });
+
+
+function createJavaParserNodeIterator( node ){
+    return {
+        forEach: function forEach( cback ){
+            if( node.node === "CompilationUnit" || node.node === "TypeDeclaration" ){
+                cback( node );
+                (node.types||[]).forEach(function( elem ){
+                    createJavaParserNodeIterator( elem ).forEach( cback );
+                });
+                (node.bodyDeclarations||[]).forEach(function( bodyDecl ) {
+                    createJavaParserNodeIterator( bodyDecl ).forEach( cback );
+                });
+            }else if( node.node === "MethodDeclaration" || node.node==="FieldDeclaration" ){
+                cback( node );
+            }else{
+                throw Error( "Not impl yet" );
+            }
+        }
+    };
+}
