@@ -7,6 +7,8 @@ exports.streamConcat = streamConcat;
 
 exports.streamFromString = streamFromString;
 
+exports.emptyStream = emptyStream;
+
 exports.createLinePrefixStream = createLinePrefixStream;
 
 
@@ -76,6 +78,15 @@ function streamConcat( streams , options ){
             }
         }());
     }
+}
+
+
+/**
+ * @return {Readable}
+ *      An empty Readable.
+ */
+function emptyStream() {
+    return new Stream.Readable({ read:function(){ this.push(null); }});
 }
 
 

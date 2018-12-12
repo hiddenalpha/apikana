@@ -17,7 +17,10 @@ describe( "PathV3Generator" , ()=>{
         for( var i=0 ; i<illegalPackages.length ; ++i ){
             const javaPackage = illegalPackages[ i ];
             try{
-                PathV3Generator.createPathV3Generator({ openApi:{} , javaPackage:javaPackage });
+                PathV3Generator.createPathV3Generator({
+                    openApi:{ info: { title:"asdf" } },
+                    javaPackage: javaPackage
+                });
                 expect( "Throw an Error when using javaPackage=\""+javaPackage+"\"" ).toBe( "behavior" );
             }catch( err ){
                 expect( err.message ).toMatch( /javaPackage/i );
@@ -176,7 +179,7 @@ describe( "PathV3Generator" , ()=>{
         function assertResult( result ){
             const compileUnit = JavaParser.parse( result , {});
             const values = collectAllValuesOfResourceConstants( compileUnit );
-            expect( values.length ).toBe( 34 );
+            expect( values.length ).toBe( 24 );
             for( let i=0 ; i<values.length ; ++i ){
                 const value = values[i];
                 expect( value ).toMatch( /^"\// ); // MUST HAVE leading slash.
@@ -228,7 +231,7 @@ describe( "PathV3Generator" , ()=>{
         function assertResult( result ){
             const compileUnit = JavaParser.parse( result , {});
             const values = collectAllValuesOfCollectionConstants( compileUnit );
-            expect( values.length ).toBe( 38 );
+            expect( values.length ).toBe( 18 );
             for( let i=0 ; i<values.length ; ++i ){
                 const value = values[i];
                 expect( value ).toEqual( 'RESOURCE + "/"' );
@@ -455,6 +458,9 @@ describe( "PathV3Generator" , ()=>{
         //    If a segment is same as a reserved word in java then it will wear an additional _ (underscore) at the begin (end).
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
+                info: {
+                    title: "alsdgjoairgj lawjgh"
+                },
                 paths: {
                     // Some reserved words found at "https://www.thoughtco.com/reserved-words-in-java-2034200".
                     "/abstract/assert/boolean/break/byte/case": null,
@@ -477,14 +483,7 @@ describe( "PathV3Generator" , ()=>{
         ;
 
         function assertResult( result ){
-            const lines = result.split( '\n' );
-            const segmentNames = [];
-            for( var i=0 ; i<lines.length ; ++i ){
-                const m = /^\s*public static class (.*) {$/.exec( lines[i] );
-                if( m ){
-                    segmentNames.push( m[1] );
-                }
-            }
+            const compilationUnit = JavaParser.parse( result , {});
             const expectedSegmentNames = [
                 "_abstract", "_assert", "_boolean", "_break", "_byte", "_case",
                 "_catch", "_char", "_class", "_const", "_continue", "_default",
@@ -496,11 +495,16 @@ describe( "PathV3Generator" , ()=>{
                 "_switch", "_synchronized", "_this", "_throw", "_throws", "_transient",
                 "_true", "_try", "_void", "_volatile", "_while",
             ];
-            expect( segmentNames.length ).toEqual( expectedSegmentNames.length );
-            for( var i=0 ; i<segmentNames.length ; ++i ){
-                expect( segmentNames[i] ).toEqual( expectedSegmentNames[i] );
-            }
+            const segmentClasses = collectSegmentClasses( compilationUnit );
+            expect( "Test" ).toBe( "written" );
             done();
+        }
+        function collectSegmentClasses( node ){
+            const segmentClasses = [];
+            createJavaParserNodeIterator( node ).forEach(function( elem ){
+                debugger;
+            });
+            return segmentClasses;
         }
     });
 
