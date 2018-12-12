@@ -38,6 +38,9 @@ function createPathV3Generator( options ) {
     function throwIfPathV3GeneratorOptionsBad( options ){
         if( !options.openApi ) throw Error("Arg 'options.openApi' missing.");
 
+        if( !options.openApi.info ) throw Error("Arg 'options.openApi.info' missing.");
+        if( !options.openApi.info.title ) throw Error("Arg 'options.openApi.info.title' missing.");
+
         if( !options.javaPackage ) throw Error("Arg 'options.javaPackage' missing.");
         if( typeof(options.javaPackage) !== "string" ) throw Error( "Arg 'options.javaPackage' string expected but got '"+typeof(options.javaPackage)+"'" );
         if( !/^(?![0-9])(?!.*\.[0-9])[A-Za-z0-9.]+$/.test(options.javaPackage) ) throw Error( "Illegal chars in javaPackage" );
@@ -92,19 +95,6 @@ function createCollectionField() {
 }
 
 
-if( require.main === module ) setTimeout( main );
-function main(){
-    const rootName = "MyFooApi";
-    const rootNode = transformPathsToTree({
-        "/my/foo/v1/foo/bar": null,
-    });
-    const rootClass = createClass( rootName , rootNode , null );
-    rootClass.readable()
-        .pipe( process.stdout )
-    ;
-}
-
-
 /**
  * @param name {string}
  *      Name of the class to generate.
@@ -112,9 +102,13 @@ function main(){
  *      The tree node to generate the class for.
  */
 function createClass( name , node ){
+    if( DEBUG ){
+        if( !name ) throw Error("Arg 'name' expected not to be falsy");
+    }
 
-    // Extract hidden arg.
+    // Extract hidden args.
     const segmentStack = Array.isArray(arguments[2]) ? arguments[2] : [];
+    const isBased = !!arguments[3];
 
     const thisClassName = segmentToConstantName( name );
 
@@ -136,23 +130,30 @@ function createClass( name , node ){
         collectionField = createCollectionField();
     }
 
-    // Setup BASED class
-    const bodyForBased_parts = [];
-    Object.keys( node ).forEach(function( segment ){
-        const childClass = createClass( segment , node[segment] , segmentStack.concat([segment]) ); // Go recursive here.
-        bodyForBased_parts.push( childClass );
-    });
-    const bodyForBased = StreamUtils.streamConcat( bodyForBased_parts.map(e=>e.readable()) );
-    const basedClass = createJavaCustomType({
-        name: "BASED",
-        isStatic: true,
-        bodyReadable: bodyForBased,
-    });
+    // Setup BASED class in case we're not already based.
+    var basedClass;
+    if( isBased ){
+        basedClass = {
+            readable: StreamUtils.emptyStream.bind(0),
+        };
+    }else{
+        const bodyForBased_parts = [];
+        Object.keys( node ).forEach(function( segment ){
+            const childClass = createClass( segment , node[segment] , [segment] , true ); // Go recursive here.
+            bodyForBased_parts.push( childClass );
+        });
+        const bodyForBased = StreamUtils.streamConcat( bodyForBased_parts.map(e=>e.readable()) );
+        basedClass = createJavaCustomType({
+            name: "BASED",
+            isStatic: true,
+            bodyReadable: bodyForBased,
+        });
+    }
 
     // Setup child classes.
     const childClasses = [];
     Object.keys( node ).forEach(function( segment ){
-        const childClass = createClass( segment , node[segment] , segmentStack.concat([segment]) ); // Go recursive here.
+        const childClass = createClass( segment , node[segment] , segmentStack.concat([segment]) , isBased ); // Go recursive here.
         childClasses.push( childClass );
     });
 
@@ -162,13 +163,10 @@ function createClass( name , node ){
         isStatic: false,
         bodyReadable: StreamUtils.streamConcat([
             ctorReadable,
-            StreamUtils.streamFromString( '\n' ),
             resourceField.readable(),
             collectionField.readable(),
-            StreamUtils.streamFromString( '\n' ),
-            basedClass.readable(),
-            StreamUtils.streamFromString( '\n' ),
             StreamUtils.streamConcat( childClasses.map(e=>e.readable()) ),
+            basedClass.readable(),
         ]),
     });
     return thisClass;
