@@ -18,9 +18,7 @@ function noop(){}
 
 function createPathV3Generator( options ) {
     if( !options ) options = {};
-    if( DEBUG ){
-        throwIfPathV3GeneratorOptionsBad( options );
-    }
+    throwIfPathV3GeneratorOptionsBad( options );
     return {
         "readable": createReadable,
     };
