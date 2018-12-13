@@ -319,12 +319,17 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Puts only segments after BASED identifier into the constant" , function( done ){
+    it( "Puts only segments after BASED identifier into the constant" , function( done ){
         //    When using RESOURCE/COLLECTION somewhere behind BASED, the string will only contain path segments mentioned after the BASED identifier.
         //        Eg:  Using MyApi.one.BASED.two.three.COLLECTION the path would be "/two/three/".
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
-                paths: {}
+                info: {
+                    title: "my root class",
+                },
+                paths: {
+                    "/one/two/three": null,
+                }
             },
             javaPackage: "com.example",
         });
@@ -335,7 +340,26 @@ describe( "PathV3Generator" , ()=>{
         ;
 
         function assertResult( result ){
-            expect( "No-asserts" ).toBe( "Good-asserts" );
+            const compileUnit = JavaParser.parse( result , {} );
+            // Extract MyRootClass
+            const clazz = compileUnit.types[0];
+            expect( clazz.name.identifier ).toEqual( "MyRootClass" );
+            // Extract MyRootClass.one
+            const oneSegment = clazz.bodyDeclarations.filter( e => e.name && e.name.identifier==="one" )[0];
+            expect( oneSegment ).toBeTruthy();
+            // Extract MyRootClass.one.BASED
+            const based = oneSegment.bodyDeclarations.filter( e => e.name && e.name.identifier==="BASED" )[0];
+            expect( based ).toBeTruthy();
+            // Extract MyRootClass.one.BASED.two
+            const basedTwoSegment = based.bodyDeclarations.filter( e => e.name && e.name.identifier==="two" )[0];
+            expect( basedTwoSegment ).toBeTruthy();
+            // Extract MyRootClass.one.BASED.two.RESOURCE
+            const resourceConstant = basedTwoSegment.bodyDeclarations.filter( e => e.fragments && e.fragments[0].name.identifier==="RESOURCE" )[0];
+            expect( resourceConstant ).toBeTruthy();
+            const value = resourceConstant.fragments[0].initializer.escapedValue;
+            // Absolute path would be "/one/two". But because we used ".one.BASED.two" we
+            // now expect to only get most right segment.
+            expect( value ).toEqual( '"/two"' );
             done();
         }
     });
