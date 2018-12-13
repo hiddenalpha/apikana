@@ -472,12 +472,12 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Prepends an additional underscore char to generated identifier when they're a reserved word in java" , function( done ){
+    it( "Prepends an additional underscore char to generated identifier when they're a reserved word in java" , function( done ){
         //    If a segment is same as a reserved word in java then it will wear an additional _ (underscore) at the begin (end).
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
-                    title: "alsdgjoairgj lawjgh"
+                    title: "EoarheAoiuno"
                 },
                 paths: {
                     // Some reserved words found at "https://www.thoughtco.com/reserved-words-in-java-2034200".
@@ -502,7 +502,13 @@ describe( "PathV3Generator" , ()=>{
 
         function assertResult( result ){
             const compilationUnit = JavaParser.parse( result , {});
-            const expectedSegmentNames = [
+            const resources = [];
+            createJavaParserNodeIterator( compilationUnit ).forEach(function( node ){
+                if( node.node==="TypeDeclaration" && node.name.identifier !== "EoarheAoiuno" && node.name.identifier !== "BASED" ){
+                    resources.push( node );
+                }
+            });
+            const whitelist = [
                 "_abstract", "_assert", "_boolean", "_break", "_byte", "_case",
                 "_catch", "_char", "_class", "_const", "_continue", "_default",
                 "_double", "_do", "_else", "_enum", "_extends", "_false",
@@ -513,16 +519,11 @@ describe( "PathV3Generator" , ()=>{
                 "_switch", "_synchronized", "_this", "_throw", "_throws", "_transient",
                 "_true", "_try", "_void", "_volatile", "_while",
             ];
-            const segmentClasses = collectSegmentClasses( compilationUnit );
-            expect( "Test" ).toBe( "written" );
-            done();
-        }
-        function collectSegmentClasses( node ){
-            const segmentClasses = [];
-            createJavaParserNodeIterator( node ).forEach(function( elem ){
-                debugger;
+            expect( resources.length ).toEqual( 236 );
+            resources.forEach(function( elem ){
+                expect( whitelist ).toContain( elem.name.identifier );
             });
-            return segmentClasses;
+            done();
         }
     });
 
