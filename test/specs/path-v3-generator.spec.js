@@ -401,10 +401,13 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Replaces chars not allowed in java identifiers by an underscore char" , function( done ){
+    it( "Replaces chars not allowed in java identifiers by an underscore char" , function( done ){
         //    If a segment contains chars not allowed in java identifiers then they will be replaced with _ (underscore).
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
+                info: {
+                    title: "asdf asdf foo",
+                },
                 paths: {
                     "/store-inventory": null,
                     "/what.about.dots": null,
@@ -422,25 +425,20 @@ describe( "PathV3Generator" , ()=>{
         ;
 
         function assertResult( result ){
-            const lines = result.split( '\n' );
-            const segmentNames = [];
-            for( var i=0 ; i<lines.length ; ++i ){
-                const m = /^\s*public static class (.*) {$/.exec( lines[i] );
-                if( m ){
-                    segmentNames.push(m[1]);
+            const compilationUnit = JavaParser.parse( result , {} );
+            const resources = [];
+            createJavaParserNodeIterator( compilationUnit ).forEach(function( node ){
+                if( node.node==="TypeDeclaration" && node.name.identifier !== "AsdfAsdfFoo" && node.name.identifier !== "BASED" ){
+                    resources.push( node );
                 }
-            }
-            const expectedSegmentNames = [
-                "store_inventory",
-                "what_about_dots",
-                "are", "you", "sure_",
-                /*  same   */ "a_genious",
-                "a_space",
-            ];
-            expect( segmentNames.length ).toEqual( expectedSegmentNames.length );
-            for( var i=0 ; i<segmentNames.length ; ++i ){
-                expect( segmentNames[i] ).toEqual( expectedSegmentNames[i] );
-            }
+            });
+            resources.forEach(function( elem ){
+                const whitelist = [
+                    "a_genious", "a_space", "are", "store_inventory", "sure_", "what_about_dots",
+                    "you",
+                ];
+                expect( whitelist ).toContain( elem.name.identifier );
+            });
             done();
         }
     });
