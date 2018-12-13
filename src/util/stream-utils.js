@@ -5,6 +5,8 @@ exports.createStringWritable = createStringWritable;
 
 exports.streamConcat = streamConcat;
 
+exports.streamFromError = streamFromError;
+
 exports.streamFromString = streamFromString;
 
 exports.emptyStream = emptyStream;
@@ -32,10 +34,7 @@ function createStringWritable() {
 			chunks.push( chunk.toString() );
 			setImmediate( done );
 		}},
-		// then: { value: promise.then.bind(promise) },
-		then: { value: function(){
-			return promise.then.apply(promise,arguments);
-		}},
+		then: { value: promise.then.bind(promise) },
 		"catch": { value: promise["catch"].bind(promise) },
 	});
 	writable.on( "finish" , function() {
@@ -87,6 +86,15 @@ function streamConcat( streams , options ){
  */
 function emptyStream() {
     return new Stream.Readable({ read:function(){ this.push(null); }});
+}
+
+
+function streamFromError( err ){
+    var isRunning = false;
+    return new Stream.Readable({ read:function(){
+        if( isRunning ){ return; }else{ isRunning=true; }
+        setImmediate( this.emit.bind(this,"error",err) );
+    }});
 }
 
 

@@ -26,6 +26,11 @@ function createPathV3Generator( options ) {
         // Evaluation of apiName simply copy-pasted from 2ndGen path generator.
         const rootClassName = JavaGen.classOf((options.openApi.info || {}).title || '');
         const rootNode = transformPathsToTree( options.openApi.paths );
+        try{
+            throwIfTreeWouldProduceNameConflict( rootNode );
+        }catch( e ){
+            return StreamUtils.streamFromError( e );
+        }
         const fileBeginReadable = StreamUtils.streamFromString( "package "+ options.javaPackage +".path;\n\n" );
         const rootClass = createClass( rootClassName , rootNode );
         return StreamUtils.streamConcat([
@@ -407,4 +412,32 @@ function escapeForJavaIdentifier( str ){
         str = '_'+ str;
     }
     return str;
+}
+
+/**
+ * @param node
+ *      The tree node to validate. This is a tree simply consisting of nested Maps.
+ * @throws {Error}
+ *      In case tree would produce name collisions when generated.
+ */
+function throwIfTreeWouldProduceNameConflict( node ){
+    const segmentStack = arguments[1] ? arguments[1] : [];
+    const keys = Object.keys( node );
+    const rawNamesOnThisLayer = [];
+    const namesOnThisLayer = [];
+    for( let i=0 ; i<keys.length ; ++i ){
+        const key = keys[i];
+        const child = node[key];
+        const childName = segmentToConstantName( key );
+        throwIfTreeWouldProduceNameConflict( child , segmentStack.concat([childName]) ); // Traverse recursively.
+        const idx = namesOnThisLayer.indexOf(childName);
+        if( idx !== -1 ){
+            // Name already seen earlier.
+            throw Error( "Path segment '"+key+"' collides with '"+rawNamesOnThisLayer[idx]+"'. Both of them would result in '/"+segmentStack.concat([childName]).join('/')+"'." );
+        }else{
+            // Name not used yet
+            rawNamesOnThisLayer.push( key );
+            namesOnThisLayer.push( childName );
+        }
+    }
 }
