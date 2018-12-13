@@ -260,7 +260,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Provides BASED identifier where we can continue with following-up segments" , function( done ){
+    it( "Provides BASED identifier where we can continue with following-up segments" , function( done ){
         // Original spec:
         // Also on every segment identifier there's a "BASED" available. After this
         // identifier, a dev can continue to list follow-up path segments same as when
@@ -283,15 +283,15 @@ describe( "PathV3Generator" , ()=>{
         ;
 
         function assertResult( result ){
-            // Check if BASED class exists.
-            console.log( result ); // TODO: Drop line.
             const compileUnit = JavaParser.parse( result , {});
             const clazz = compileUnit.types[0];
-            const based = clazz.bodyDeclarations[3];
-            expect( based.name.identifier ).toEqual( "BASED" );
-            // Check if BASED class has TBD content.
-            const asdf = based.bodyDeclarations[0];
-            expect( "test" ).toBe( "written" );
+            const fooSegment = clazz.bodyDeclarations.filter( e => e.name.identifier==="foo" )[0];
+            expect( fooSegment ).toBeTruthy();
+            const based = fooSegment.bodyDeclarations.filter( e => e.name && e.name.identifier==="BASED" )[0];
+            expect( based ).toBeTruthy();
+            // Check if BASED class has expected content.
+            const barSegment = based.bodyDeclarations.filter( e => e.name.identifier==="bar" )[0];
+            expect( barSegment ).toBeTruthy();
             done();
         }
     });
