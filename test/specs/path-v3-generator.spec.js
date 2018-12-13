@@ -93,12 +93,15 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Uses first path segment after v1 after class" , function( done ){
+    xit( "Provides first segment after provided basePath" , function( done ){
         // Original requirement:
         // | Using dot-notation, a dev can access identifiers which are named like the first path segment after the 'v1' in his declared API.
         // |     Eg: with path "/my/api/v1/foo" a dev could access: MyApi.foo
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
+                info: {
+                    title: "winnie poo",
+                },
                 paths: {
                     "/my/api/v1/foo": null
                 }
@@ -112,16 +115,12 @@ describe( "PathV3Generator" , ()=>{
         ;
 
         function assertResult( result ){
-            const lines = result.split( '\n' );
-            var value;
-            for( var i=0 ; i<lines.length ; ++i ){
-                const m = /^    public static final String RESOURCE = "([^"]+)";$/.exec( lines[i] );
-                if( m ){
-                    value = m[1];
-                    break; // We assume, first match is the one we're searching for.
-                }
-            }
-            expect( value ).toEqual( "/my/api/v1/foo" );
+            const compilationUnit = JavaParser.parse( result , {} );
+            const clazz = compilationUnit.types[0];
+            const identifiers = clazz.bodyDeclarations.filter( e => e.name.identifier!=="WinniePoo" && e.name.identifier!=="BASED" );
+            expect( identifiers.length ).toEqual( 1 );
+            const hopefullyFoo = identifiers[0];
+            expect( hopefullyFoo.name.identifier ).toEqual( "foo" );
             done();
         }
     });
