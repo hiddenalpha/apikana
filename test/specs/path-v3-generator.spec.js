@@ -3,7 +3,7 @@
 const JavaParser = require("java-parser");
 const Yaml = require("yamljs");
 const PathV3Generator = require("src/path-v3-generator/path-v3-generator");
-const PathV3Utils = require("src/stream-utils");
+const PathV3Utils = require("src/util/stream-utils");
 
 
 describe( "PathV3Generator" , ()=>{
