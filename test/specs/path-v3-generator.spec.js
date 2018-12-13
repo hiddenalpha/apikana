@@ -365,7 +365,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Adds a dollar sign to segments which are a variable" , function( done ){
+    it( "Adds a dollar sign to segments which are a variable" , function( done ){
         //    In case a segment is a variable, it will wear a $ (dollar sign) at end of its name.
         //        Eg: Using MyApi.one.two$.three.four$.five would result in "/my/api/v1/one/{two}/three/{four}/five".
         //        There will either only the default or the variable be available. But not both.
@@ -375,7 +375,7 @@ describe( "PathV3Generator" , ()=>{
                     title: "foo bar api",
                 },
                 paths: {
-                    "/my/foo/v1/pet/{petId}/info": null,
+                    "/pet/{petId}/info": null,
                 }
             },
             javaPackage: "com.example",
@@ -387,19 +387,15 @@ describe( "PathV3Generator" , ()=>{
         ;
 
         function assertResult( result ){
-            const lines = result.split( '\n' );
-            // Expected names in sequence with 'petId' wearing a trailing dollar sign.
-            const expectedClassNames = [ "MyFoo" , "pet" , "petId$" , "info" ];
-            var expectedClassIdx = 0;
-            for( var i=0 ; i<lines.length ; ++i ){
-                const m = /^\s*public static class (.*) {$/.exec( lines[i] );
-                if( m ){ // Line matched
-                    const className = m[1];
-                    expect( className ).toEqual( expectedClassNames[expectedClassIdx] );
-                    expectedClassIdx += 1;
-                }
-            }
-            expect( expectedClassIdx ).toEqual( 4 );
+            const compilationUnit = JavaParser.parse( result , {} );
+            const clazz = compilationUnit.types[0];
+            const pet = clazz.bodyDeclarations.filter( e => e.name.identifier==="pet" )[0];
+            const petId = pet.bodyDeclarations.filter( e => e.name && ~e.name.identifier.indexOf("petId") )[0];
+            // Check trailing dollar exists.
+            expect( petId.name.identifier ).toEqual( "petId$" );
+            const info = petId.bodyDeclarations.filter( e => e.name && ~e.name.identifier.indexOf("info") )[0];
+            // Also check next segment does NOT have that trailing dollar.
+            expect( info.name.identifier ).toEqual( "info" );
             done();
         }
     });
