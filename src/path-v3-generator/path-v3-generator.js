@@ -10,7 +10,7 @@ const Stream = require( "stream" );
 
 const JavaGen = require('../java-gen');
 const Log = require('../log');
-const StreamUtils = require('../stream-utils');
+const StreamUtils = require('../util/stream-utils');
 
 const DEBUG = (process.env.DEBUG !== undefined);
 function noop(){}
