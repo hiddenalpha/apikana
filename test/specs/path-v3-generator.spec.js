@@ -103,9 +103,11 @@ describe( "PathV3Generator" , ()=>{
                     title: "winnie poo",
                 },
                 paths: {
-                    "/my/api/v1/foo": null
+                    "/my/api/v1/foo": null,
+                    "/my/api/v1/bar": null,
                 }
             },
+            basePath: "/my/api/v1/",
             javaPackage: "com.example",
         });
 
@@ -117,10 +119,10 @@ describe( "PathV3Generator" , ()=>{
         function assertResult( result ){
             const compilationUnit = JavaParser.parse( result , {} );
             const clazz = compilationUnit.types[0];
-            const identifiers = clazz.bodyDeclarations.filter( e => e.name.identifier!=="WinniePoo" && e.name.identifier!=="BASED" );
-            expect( identifiers.length ).toEqual( 1 );
-            const hopefullyFoo = identifiers[0];
-            expect( hopefullyFoo.name.identifier ).toEqual( "foo" );
+            const foo = clazz.bodyDeclarations.filter( e => e.name.identifier==="foo" )[0];
+            expect( foo ).toBeTruthy();
+            const bar = clazz.bodyDeclarations.filter( e => e.name.identifier==="bar" )[0];
+            expect( bar ).toBeTruthy();
             done();
         }
     });
