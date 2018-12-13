@@ -11,6 +11,7 @@ const Stream = require( "stream" );
 const JavaGen = require('../java-gen');
 const Log = require('../log');
 const StreamUtils = require('../util/stream-utils');
+const UrlUtils = require('../url-utils');
 
 const DEBUG = (process.env.DEBUG !== undefined);
 function noop(){}
@@ -19,20 +20,25 @@ function noop(){}
 function createPathV3Generator( options ) {
     if( !options ) options = {};
     throwIfPathV3GeneratorOptionsBad( options );
+    const openApi = options.openApi;
+    const javaPackage = options.javaPackage;
+    const basePath = options.basePath;
+    options = null;
     return {
         "readable": createReadable,
     };
     function createReadable(){
         // Evaluation of apiName simply copy-pasted from 2ndGen path generator.
-        const rootClassName = JavaGen.classOf((options.openApi.info || {}).title || '');
-        const rootNode = transformPathsToTree( options.openApi.paths );
+        const rootClassName = JavaGen.classOf((openApi.info || {}).title || '');
+        const rootNode = transformPathsToTree( openApi.paths );
         try{
             throwIfTreeWouldProduceNameConflict( rootNode );
         }catch( e ){
             return StreamUtils.streamFromError( e );
         }
-        const fileBeginReadable = StreamUtils.streamFromString( "package "+ options.javaPackage +".path;\n\n" );
-        const rootClass = createClass( rootClassName , rootNode );
+        const firstNodeAfterBasePath = shiftAwayBasePath( rootNode , basePath );
+        const fileBeginReadable = StreamUtils.streamFromString( "package "+ javaPackage +".path;\n\n" );
+        const rootClass = createClass( rootClassName , firstNodeAfterBasePath , basePath );
         return StreamUtils.streamConcat([
             fileBeginReadable,
             rootClass.readable()
@@ -103,15 +109,19 @@ function createCollectionField() {
  *      Name of the class to generate.
  * @param node {Map.<string,node>}
  *      The tree node to generate the class for.
+ * @param basePath {string}
+ *      Common base of all paths. Those segments will not be available in
+ *      generated classes. Instead, first available segment will be segment
+ *      after that specified base.
  */
-function createClass( name , node ){
+function createClass( name , node , basePath ){
     if( DEBUG ){
         if( !name ) throw Error("Arg 'name' expected not to be falsy");
     }
 
-    // Extract hidden args.
-    const segmentStack = Array.isArray(arguments[2]) ? arguments[2] : [];
-    const isBased = !!arguments[3];
+    // Extract hidden args (recursion state).
+    const segmentStack = Array.isArray(arguments[3]) ? arguments[3] : [];
+    const isBased = !!arguments[4];
 
     const thisClassName = segmentToConstantName( name );
 
@@ -142,7 +152,7 @@ function createClass( name , node ){
     }else{
         const bodyForBased_parts = [];
         Object.keys( node ).forEach(function( segment ){
-            const childClass = createClass( segment , node[segment] , [segment] , true ); // Go recursive here.
+            const childClass = createClass( segment , node[segment] , basePath , [segment] , true ); // Go recursive here.
             bodyForBased_parts.push( childClass );
         });
         const bodyForBased = StreamUtils.streamConcat( bodyForBased_parts.map(e=>e.readable()) );
@@ -156,7 +166,7 @@ function createClass( name , node ){
     // Setup child classes.
     const childClasses = [];
     Object.keys( node ).forEach(function( segment ){
-        const childClass = createClass( segment , node[segment] , segmentStack.concat([segment]) , isBased ); // Go recursive here.
+        const childClass = createClass( segment , node[segment] , basePath , segmentStack.concat([segment]) , isBased ); // Go recursive here.
         childClasses.push( childClass );
     });
 
@@ -313,6 +323,41 @@ function transformPathsToTree( paths ){
     }
     const rootNode = arrange2dSegmentsAsTree( segments2d );
     return rootNode;
+}
+
+
+/**
+ * @param node
+ *      The node to shift from.
+ * @param basePath {string}
+ *      Path to remove from specified rootNode.
+ * @return
+ *      Node representing latest segment present in specified basePath.
+ */
+function shiftAwayBasePath( node , basePath ){
+    basePath = UrlUtils.dropSurroundingSlashes( basePath );
+    if( !basePath || basePath.length === 0 ){
+        return node;
+    }
+    basePath = basePath.split('/');
+    for( let i=0 ; i<basePath.length ; ++i ){
+        const key = basePath[i];
+        const actualKeys = Object.keys( node );
+        if( actualKeys.length > 1 ){
+            delete actualKeys[key];  // Remove correct key.
+            const exampleKey = actualKeys[0];  // Take a random bad key.
+            // TODO: Provide full path (not only segment) in this error msg.
+            throw Error( "Segment '"+exampleKey+"' doesn't fit into basePath" );
+        }else if( actualKeys[0] !== key ){
+            // TODO: Provide full path (not only segment) in this error msg.
+            throw Error( "Segment '"+actualKeys[0]+"' doesn't fit into basePath" );
+        }
+        // Don't shift in last iteration.
+        if( i<basePath.length-1 ){
+            node = node[key]; // Shift down one step.
+        }
+    }
+    return node;
 }
 
 
