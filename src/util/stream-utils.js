@@ -25,27 +25,29 @@ const Stream = require("stream");
  *      with the written content as string as soon the writable has finished.
  */
 function createStringWritable() {
-	var fulfill, reject;
-	var promise = new Promise(function( f , r ){ fulfill=f; reject=r; });
-	var writable = new Stream.Writable();
-	var chunks = [];
-	Object.defineProperties( writable , {
-		_write: { value: function( chunk , encoding , done ) {
-			chunks.push( chunk.toString() );
-			setImmediate( done );
-		}},
-		then: { value: promise.then.bind(promise) },
-		"catch": { value: promise["catch"].bind(promise) },
-	});
-	writable.on( "finish" , function() {
-		setImmediate( fulfill , chunks.join("") );
-		chunks = null;
-	});
-	writable.on( "error" , function( err ) {
-		setImmediate( reject , err );
-		chunks = null;
-	});
-	return writable;
+    var fulfill, reject;
+    var promise = new Promise(function( f , r ){ fulfill=f; reject=r; });
+    var writable = new Stream.Writable();
+    var chunks = [];
+    Object.defineProperties( writable , {
+        _write: { value: function( chunk , encoding , done ) {
+            chunks.push( chunk.toString() );
+            setImmediate( done );
+        }},
+        then: { value: promise.then.bind(promise) },
+        "catch": { value: promise["catch"].bind(promise) },
+    });
+    writable.on( "finish" , function() {
+        setImmediate( fulfill , chunks.join("") );
+        chunks = null;
+    });
+    // HINT: This doesn't work. Errors from source will never pass here. Instead,
+    // client has to register a handler for 'error' event before pipe to us.
+    writable.on( "error" , function( err ) {
+        setImmediate( reject , err );
+        chunks = null;
+    });
+    return writable;
 }
 
 
