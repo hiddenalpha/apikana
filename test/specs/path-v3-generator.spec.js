@@ -6,6 +6,9 @@ const PathV3Generator = require("src/path-v3-generator/path-v3-generator");
 const PathV3Utils = require("src/util/stream-utils");
 
 
+function noop(){}
+
+
 describe( "PathV3Generator" , ()=>{
 
 
@@ -130,11 +133,15 @@ describe( "PathV3Generator" , ()=>{
         // |     Eg: with path "/my/api/v1/one/two/three" a dev could access: MyApi.one.two.three
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
+                info: {
+                    title: "qwer qwer API",
+                },
                 paths: {
                     "/my/api/v1/one/two/three": null,
                 }
             },
             javaPackage: "com.example",
+            // TODO: Define somewhat like 'basePath' here.
         });
 
         victim.readable()
@@ -143,6 +150,8 @@ describe( "PathV3Generator" , ()=>{
         ;
 
         function assertResult( result ){
+            // const compilationUnit = JavaParser.parse( result , {} );
+            // const clazz = compilationUnit.types[0];
             expect( "Has-no-asserts" ).toEqual( "Has-good-asserts" );
             done();
         }
@@ -444,31 +453,37 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Will failfast when substitution of illegal chars would produce a name conflict" , function( done ){
+    it( "Will fail when substitution of illegal chars would produce a name conflict" , function( done ){
         // In case of a name conflict due to this replacement, Apikana will fail-fast.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
+                info: {
+                    title: "my grand pa",
+                },
                 paths: {
-                    "/my/foo/v1/number1": null,
-                    "/my/foo/v1/number2": null,
+                    // Both of them will result in same path because numbers both get replaced by
+                    // underscore.
+                    "/my/foo/v1/2pack/two": null,
+                    "/my/foo/v1/6pack/six": null,
                 }
             },
             javaPackage: "com.example",
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
-            .then(function methodWhichNeverShouldBeCalled( result ){
+            .on( "data" , noop )
+            .on( "finish" , function(){
                 expect( "This method" ).toBe( "never called" );
                 done();
             })
-            .catch( onError )
+            .on( "error" , function onError( err ) {
+                const msg = err.message;
+                expect( msg ).toContain( "2pack" );
+                expect( msg ).toContain( "6pack" );
+                expect( msg ).toContain( "my/foo/v1/_pack" );
+                done();
+            })
         ;
-
-        function onError( err ) {
-            expect( "Error message" ).toBe( "from correct reason" );
-            done();
-        }
     });
 
 
