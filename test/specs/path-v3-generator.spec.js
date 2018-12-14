@@ -345,18 +345,6 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Does TBD when called with double slashes in paths." , function( done ){
-    });
-
-
-    xit( "Handles slash at end of path as TBD" , function( done ){
-    });
-
-
-    xit( "Handles missing slash at begin of path as TBD" , function( done ){
-    });
-
-
     it( "Puts only segments after BASED identifier into the constant" , function( done ){
         //    When using RESOURCE/COLLECTION somewhere behind BASED, the string will only contain path segments mentioned after the BASED identifier.
         //        Eg:  Using MyApi.one.BASED.two.three.COLLECTION the path would be "/two/three/".
@@ -567,6 +555,87 @@ describe( "PathV3Generator" , ()=>{
             resources.forEach(function( elem ){
                 expect( whitelist ).toContain( elem.name.identifier );
             });
+            done();
+        }
+    });
+
+
+    // See: "https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#pathsObject".
+    it( "Failfast when missing slash at begin of path" , function( done ){
+        const victim = PathV3Generator.createPathV3Generator({
+            openApi: {
+                info: {
+                    title: "tick trick track",
+                },
+                paths: {
+                    "this/path/is/missing/a/leading/slash": null,
+                },
+            },
+            javaPackage: "com.example",
+        });
+
+        victim.readable()
+            .on( "data" , noop )
+            .on( "error" , function( err ){
+                const msg = err.message;
+                expect( msg ).toMatch( /slash/i );
+                expect( msg ).toContain( "this/path/is/missing/a/leading/slash" );
+                setTimeout( done );
+            })
+            .on( "end" , function(){
+                expect( "this function" ).toBe( "never called" );
+                setTimeout( done );
+            })
+        ;
+
+    });
+
+
+    xit( "Does ToBeDefined when called with double slashes in paths." , function( done ){
+        const victim = PathV3Generator.createPathV3Generator({
+            openApi: {
+                info: {
+                    title: "tick trick track",
+                },
+                paths: {
+                    "/this/path/contains//double/slahes": null,
+                }
+            },
+            javaPackage: "com.example",
+        });
+
+        victim.readable()
+            .pipe( StreamUtils.createStringWritable() )
+            .then( assertResult )
+        ;
+
+        function assertResult( result ) {
+            expect( "expected behavior" ).toBe( "defined" );
+            done();
+        }
+    });
+
+
+    xit( "Handles slash at end of path as ToBeDefined" , function( done ){
+        const victim = PathV3Generator.createPathV3Generator({
+            openApi: {
+                info: {
+                    title: "tick trick track",
+                },
+                paths: {
+                    "/this/path/has/a/slash/at/its/end/": null,
+                },
+            },
+            javaPackage: "com.example",
+        });
+
+        victim.readable()
+            .pipe( StreamUtils.createStringWritable() )
+            .then( assertResult )
+        ;
+
+        function assertResult( result ) {
+            expect( "expected behavior" ).toBe( "defined" );
             done();
         }
     });
