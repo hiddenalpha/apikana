@@ -134,7 +134,7 @@ function createClass( name , node , basePath ){
     var collectionField;
     if( resourceFieldPath === '' ){
         resourceField = collectionField = {
-            readable: StreamUtils.streamFromString.bind(0, "" ),
+            readable: StreamUtils.emptyStream.bind(0),
         };
     }else{
         resourceField = createResourceField({
@@ -353,9 +353,7 @@ function shiftAwayBasePath( node , basePath ){
             throw Error( "Segment '"+actualKeys[0]+"' doesn't fit into basePath" );
         }
         // Don't shift in last iteration.
-        if( i<basePath.length-1 ){
-            node = node[key]; // Shift down one step.
-        }
+        node = node[key]; // Shift down one step.
     }
     return node;
 }
