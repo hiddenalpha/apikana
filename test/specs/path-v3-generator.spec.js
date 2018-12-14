@@ -3,7 +3,7 @@
 const JavaParser = require("java-parser");
 const Yaml = require("yamljs");
 const PathV3Generator = require("src/path-v3-generator/path-v3-generator");
-const PathV3Utils = require("src/util/stream-utils");
+const StreamUtils = require("src/util/stream-utils");
 
 
 function noop(){}
@@ -45,7 +45,7 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
@@ -77,7 +77,7 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
@@ -112,7 +112,7 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
@@ -128,7 +128,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Provides MyApi.one.two.three when using path '/my/api/v1/one/two/three'" , function( done ){
+    it( "Provides MyApi.one.two.three when using path '/my/api/v1/one/two/three'" , function( done ){
         // Original requirement:
         // | On such identifiers a dev recursively can access all the path segments through similar identifiers.
         // |     Eg: with path "/my/api/v1/one/two/three" a dev could access: MyApi.one.two.three
@@ -142,18 +142,22 @@ describe( "PathV3Generator" , ()=>{
                 }
             },
             javaPackage: "com.example",
-            // TODO: Define somewhat like 'basePath' here.
+            basePath: "/my/api/v1/",
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
         function assertResult( result ){
-            // const compilationUnit = JavaParser.parse( result , {} );
-            // const clazz = compilationUnit.types[0];
-            expect( "Has-no-asserts" ).toEqual( "Has-good-asserts" );
+            const compilationUnit = JavaParser.parse( result , {} );
+            const clazz = compilationUnit.types[0];
+            const one = clazz.bodyDeclarations.filter( e => e.name.identifier==="one" )[0];
+            const two = one.bodyDeclarations.filter( e => e.name && e.name.identifier==="two" )[0];
+            const three = two.bodyDeclarations.filter( e => e.name && e.name.identifier==="three" )[0];
+            const res = three.bodyDeclarations.filter( e => e.fragments && e.fragments[0].name.identifier==="RESOURCE" )[0];
+            expect( res.fragments[0].initializer.escapedValue ).toEqual( '"/one/two/three"' );
             done();
         }
     });
@@ -182,7 +186,7 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
@@ -234,7 +238,7 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
@@ -288,7 +292,7 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
@@ -307,25 +311,49 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "The BASED identifier is only available once in a chain" , function( done ){
+    it( "The BASED identifier is only available once in a chain" , function( done ){
         //    The "BASED" identifier is only available once in this chain.
         //        Eg: MyApiPaths.foo.BASED.bar.BASED wouldn't be possible.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
-                paths: {}
+                info: {
+                    title: "abc def ghi",
+                },
+                paths: {
+                    "/one/two/three/four/five/six": null,
+                }
             },
             javaPackage: "com.example",
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
         function assertResult( result ){
-            expect( "No-asserts" ).toBe( "Good-asserts" );
+            const compilationUnit = JavaParser.parse( result , {} );
+            const clazz = compilationUnit.types[0];
+            const one = clazz.bodyDeclarations.filter( e => e.name.identifier==="one" )[0];
+            const two = one.bodyDeclarations.filter( e => e.name && e.name.identifier==="two" )[0];
+            const based = two.bodyDeclarations.filter( e => e.name && e.name.identifier==="BASED" )[0];
+            const three = based.bodyDeclarations.filter( e => e.name.identifier==="three" )[0];
+            const threeBased = three.bodyDeclarations.filter( e => e.name && e.name.identifier==="BASED" )[0];
+            expect( threeBased ).toBeFalsy();
             done();
         }
+    });
+
+
+    xit( "Does TBD when called with double slashes in paths." , function( done ){
+    });
+
+
+    xit( "Handles slash at end of path as TBD" , function( done ){
+    });
+
+
+    xit( "Handles missing slash at begin of path as TBD" , function( done ){
     });
 
 
@@ -345,7 +373,7 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
@@ -392,7 +420,7 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
@@ -430,7 +458,7 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
@@ -512,7 +540,7 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( PathV3Utils.createStringWritable() )
+            .pipe( StreamUtils.createStringWritable() )
             .then( assertResult )
         ;
 
