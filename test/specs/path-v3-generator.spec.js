@@ -591,7 +591,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Does ToBeDefined when called with double slashes in paths." , function( done ){
+    it( "Failfast when called with double slashes in paths" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -605,14 +605,19 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( StreamUtils.createStringWritable() )
-            .then( assertResult )
+            .on( "data" , noop )
+            .on( "end" , function(){
+                expect( "this function" ).toBe( "never called" );
+                setTimeout( done );
+            })
+            .on( "error" , function( err ){
+                const msg = err.message;
+                expect( msg ).toMatch( /slash/i );
+                expect( msg ).toContain( "/this/path/contains//double/slahes" );
+                setTimeout( done );
+            })
         ;
 
-        function assertResult( result ) {
-            expect( "expected behavior" ).toBe( "defined" );
-            done();
-        }
     });
 
 
