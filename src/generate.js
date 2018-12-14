@@ -228,7 +228,8 @@ module.exports = {
             });
         });
 
-        task('generate-constants', ['read-rest-api'], function () {
+        // TODO: Don't put that dependency here:   vvvvvvvvvvvvvvvvvvvvvvvvvvvv
+        task('generate-constants', ['read-rest-api','generate-3rdGen-constants'], function () {
             if (restApi.paths == null || restApi.paths.length === 0) {
                 return emptyStream();
             }
