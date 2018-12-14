@@ -228,8 +228,7 @@ module.exports = {
             });
         });
 
-        // TODO: Don't put that dependency here:   vvvvvvvvvvvvvvvvvvvvvvvvvvvv
-        task('generate-constants', ['read-rest-api','generate-3rdGen-constants'], function () {
+        task('generate-constants', ['read-rest-api'], function () {
             if (restApi.paths == null || restApi.paths.length === 0) {
                 return emptyStream();
             }
@@ -238,48 +237,49 @@ module.exports = {
                 gulp.dest('model', {cwd: dest}));
         });
 
-        task('generate-3rdGen-constants', ['read-rest-api'], function(){
+        task('generate-3rdGen-constants', ['copy-src','read-rest-api'], function(){
             // Imports.
             const Stream = require('stream');
             const PathV3Generator = require('./path-v3-generator/path-v3-generator');
             const JavaGen = require('./java-gen');
-            // Collect required data.
-            const openApi = yaml.load( params.api() );
+            function noop(){}
+            // Vars.
             const javaPackage = params.javaPackage();
+            const gulpOStream = gulp.dest( "model/" , {cwd: dest});
+            const openApi = yaml.load( source +'/'+ params.api() );
             const apiName = ((openApi.info || {}).title || '');
             const outputFilePath = 'java/' + javaPackage.replace(/\./g, '/') + '/' + JavaGen.classOf(apiName) + '.java';
-            // Setup a generator.
-            const v3Generator = PathV3Generator.createPathV3Generator({
-                openApi:     openApi,
-                javaPackage: javaPackage,
-                basePath:    params.basePath(),
-            });
-            // Wrap the generator with some glue code. Here we simply collect generated
-            // stream and pass it as one File further down the stream.
-            var isRunning = false;
-            const oStream = new Stream.Readable({ objectMode:true , read:function(){
-                if( isRunning ){ return; }else{ isRunning=true; }
+            // Seems vinyls 'File' isn't designed for streaming. Therefore we'll collect
+            // our generated code here and pass it as one huge chunk (aka vinyl File) to
+            // make our dependencies happy.
+            const collectWholeFileStream = new Stream.Readable({ objectMode:true , read:function(){
+                if( this._isRunning ){ return; }else{ this._isRunning=true; } // <-- Make sure to fire only once.
                 const contentBuffers = [];
-                // Trigger generator to generate the java code.
-                v3Generator.readable()
+                // Instantiate a generator.
+                PathV3Generator.createPathV3Generator({
+                        openApi:     openApi,
+                        javaPackage: javaPackage,
+                        basePath:    params.basePath(),
+                    })
+                    .readable()
                     // Append received chunks to our collection.
                     .on( "data" , contentBuffers.push.bind(contentBuffers) )
                     // Continue below as soon all chunks are collected.
                     .on( "end" , whenFileCollected )
                 ;
                 function whenFileCollected(){
-                    const file = new File({
+                    // Pack all the collected file content into one buffer and wrap that within a
+                    // vinyl File.
+                    collectWholeFileStream.push(new File({
                         path: outputFilePath,
                         contents: Buffer.concat(contentBuffers)
-                    });
-                    oStream.push( file );
-                    oStream.push( null ); // EOF
+                    }));
+                    // EOF: Signalize that was the last chunk in this stream.
+                    collectWholeFileStream.push( null );
                 }
             }});
-            return oStream
-                // Pipe our files to gulp so he stores those to disk.
-                .pipe( gulp.dest( "model/" , {cwd: dest}) )
-            ;
+            collectWholeFileStream.pipe( gulpOStream );
+            return gulpOStream;
         });
 
         task('copy-src', function () {
