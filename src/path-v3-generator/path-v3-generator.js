@@ -398,7 +398,8 @@ function arrange2dSegmentsAsTree( paths ){
         for( var i=0 ; i<paths.length ; ++i ){
             const parentName = paths[i][level-1];
             const segment = paths[i][level];
-            if( !segment ) continue;
+            if( typeof(segment)==="undefined" ) continue;
+            if( segment==="" ) throw Error( "Double slash not allowed in path '/"+paths[i].join('/')+"'." );
             if( parentName != name ) continue;
             if( !node[segment] ) node[segment] = {};
             toNode( segment , node[segment] , level+1 );
