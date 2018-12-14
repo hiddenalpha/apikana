@@ -259,7 +259,7 @@ module.exports = {
                 PathV3Generator.createPathV3Generator({
                         openApi:     openApi,
                         javaPackage: javaPackage,
-                        basePath:    params.basePath(),
+                        pathPrefix:    params.pathPrefix(),
                     })
                     .readable()
                     // Append received chunks to our collection.

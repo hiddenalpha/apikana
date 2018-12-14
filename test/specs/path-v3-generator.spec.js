@@ -107,7 +107,7 @@ describe( "PathV3Generator" , ()=>{
                     "/my/api/v1/bar/blubb": null,
                 }
             },
-            basePath: "/my/api/v1/",
+            pathPrefix: "/my/api/v1/",
             javaPackage: "com.example",
         });
 
@@ -142,7 +142,7 @@ describe( "PathV3Generator" , ()=>{
                 }
             },
             javaPackage: "com.example",
-            basePath: "/my/api/v1/",
+            pathPrefix: "/my/api/v1/",
         });
 
         victim.readable()

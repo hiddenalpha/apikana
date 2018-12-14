@@ -22,7 +22,7 @@ function createPathV3Generator( options ) {
     throwIfPathV3GeneratorOptionsBad( options );
     const openApi = options.openApi;
     const javaPackage = options.javaPackage;
-    const basePath = options.basePath;
+    const pathPrefix = options.pathPrefix;
     options = null;
     return {
         "readable": createReadable,
@@ -36,9 +36,9 @@ function createPathV3Generator( options ) {
         }catch( e ){
             return StreamUtils.streamFromError( e );
         }
-        const firstNodeAfterBasePath = shiftAwayBasePath( rootNode , basePath );
+        const firstNodeAfterBasePath = shiftAwayBasePath( rootNode , pathPrefix );
         const fileBeginReadable = StreamUtils.streamFromString( "package "+ javaPackage +".path;\n\n" );
-        const rootClass = createClass( rootClassName , firstNodeAfterBasePath , basePath );
+        const rootClass = createClass( rootClassName , firstNodeAfterBasePath , pathPrefix );
         return StreamUtils.streamConcat([
             fileBeginReadable,
             rootClass.readable()
@@ -54,9 +54,9 @@ function createPathV3Generator( options ) {
         if( typeof(options.javaPackage) !== "string" ) throw Error( "Arg 'options.javaPackage' string expected but got '"+typeof(options.javaPackage)+"'" );
         if( !/^(?![0-9])(?!.*\.[0-9])[A-Za-z0-9.]+$/.test(options.javaPackage) ) throw Error( "Illegal chars in javaPackage" );
 
-        if( !options.basePath ){
-            Log.debug("'options.basePath' not set. Assume empty.");
-            options.basePath = "";
+        if( !options.pathPrefix ){
+            Log.debug("'options.pathPrefix' not set. Assume empty.");
+            options.pathPrefix = "";
         }
     }
 }
@@ -333,19 +333,19 @@ function transformPathsToTree( paths ){
 /**
  * @param node
  *      The node to shift from.
- * @param basePath {string}
+ * @param pathPrefix {string}
  *      Path to remove from specified rootNode.
  * @return
  *      Node representing latest segment present in specified basePath.
  */
-function shiftAwayBasePath( node , basePath ){
-    basePath = UrlUtils.dropSurroundingSlashes( basePath );
-    if( !basePath || basePath.length === 0 ){
+function shiftAwayBasePath( node , pathPrefix ){
+    pathPrefix = UrlUtils.dropSurroundingSlashes( pathPrefix );
+    if( !pathPrefix || pathPrefix.length === 0 ){
         return node;
     }
-    basePath = basePath.split('/');
-    for( let i=0 ; i<basePath.length ; ++i ){
-        const key = basePath[i];
+    pathPrefix = pathPrefix.split('/');
+    for( let i=0 ; i<pathPrefix.length ; ++i ){
+        const key = pathPrefix[i];
         const actualKeys = Object.keys( node );
         if( actualKeys.length > 1 ){
             delete actualKeys[key];  // Remove correct key.
