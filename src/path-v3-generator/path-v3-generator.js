@@ -30,8 +30,10 @@ function createPathV3Generator( options ) {
     function createReadable(){
         // Evaluation of apiName simply copy-pasted from 2ndGen path generator.
         const rootClassName = JavaGen.classOf((openApi.info || {}).title || '');
-        const rootNode = transformPathsToTree( openApi.paths );
+        const paths = (openApi.paths || {});
+        var rootNode;
         try{
+            rootNode = transformPathsToTree( paths ); // May throws in case slashing isn't valid.
             throwIfTreeWouldProduceNameConflict( rootNode );
         }catch( e ){
             return StreamUtils.streamFromError( e );
@@ -321,8 +323,9 @@ function transformPathsToTree( paths ){
     const segments2d = splitAllPathsToArrays( paths );
     // Drop leading segment and ensure it was empty.
     for( var i=0 ; i<segments2d.length ; ++i ){
-        if( segments2d[i].splice(0,1)[0] != "" ){
-            throw Error( "IllegalArgument: Leading slash missing on path '"+segments2d[i].join('/')+"'" );
+        const firstSegment = segments2d[i].splice(0,1)[0];
+        if( firstSegment !== "" ){
+            throw Error( "Leading slash missing on path '"+firstSegment+'/'+segments2d[i].join('/')+"'" );
         }
     }
     const rootNode = arrange2dSegmentsAsTree( segments2d );
@@ -371,6 +374,9 @@ function shiftAwayBasePath( node , pathPrefix ){
  */
 function splitAllPathsToArrays( paths ){
     const keys = Object.keys( paths );
+    if( keys.length === 0 ){
+        Log.debug( "No paths specified." );
+    }
     const result = [];
     for( var i=0 ; i<keys.length ; ++i ){
         result[i] = keys[i].split( "/" );
