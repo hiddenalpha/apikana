@@ -227,8 +227,8 @@ describe( "PathV3Generator" , ()=>{
                     title: "asdfsadf",
                 },
                 paths: {
-                    "/customer/": null,
-                    "/customer/{id}/": null,
+                    "/customer": null,
+                    "/customer/{id}": null,
                     "/customer/{id}/name": null,
                     "/customer/{id}/contact": null,
                     "/customer/{id}/contact/postal": null,
@@ -621,7 +621,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Handles slash at end of path as ToBeDefined" , function( done ){
+    it( "Failfast when api has slashes at end of path" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -635,14 +635,18 @@ describe( "PathV3Generator" , ()=>{
         });
 
         victim.readable()
-            .pipe( StreamUtils.createStringWritable() )
-            .then( assertResult )
+            .on( "data" , noop )
+            .on( "end" , function(){
+                expect( "this funciton" ).toBe( "never called" );
+                setTimeout( done );
+            })
+            .on( "error" , function( err ){
+                const msg = err.message;
+                expect( msg ).toMatch( /slash/i );
+                expect( msg ).toContain( "/this/path/has/a/slash/at/its/end/" );
+                setTimeout( done );
+            })
         ;
-
-        function assertResult( result ) {
-            expect( "expected behavior" ).toBe( "defined" );
-            done();
-        }
     });
 
 

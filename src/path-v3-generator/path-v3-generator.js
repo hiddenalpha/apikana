@@ -398,8 +398,14 @@ function arrange2dSegmentsAsTree( paths ){
         for( var i=0 ; i<paths.length ; ++i ){
             const parentName = paths[i][level-1];
             const segment = paths[i][level];
-            if( typeof(segment)==="undefined" ) continue;
-            if( segment==="" ) throw Error( "Double slash not allowed in path '/"+paths[i].join('/')+"'." );
+            if( segment===undefined ) continue;
+            if( segment==="" ){
+                if( paths[i][level+1]===undefined ){
+                    throw Error( "Slashes at end of path not allowed in '/"+paths[i].join('/')+"'." );
+                }else{
+                    throw Error( "Double slashes not allowed in path '/"+paths[i].join('/')+"'." );
+                }
+            }
             if( parentName != name ) continue;
             if( !node[segment] ) node[segment] = {};
             toNode( segment , node[segment] , level+1 );
