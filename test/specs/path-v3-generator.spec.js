@@ -93,7 +93,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Provides first segment after provided basePath" , function( done ){
+    it( "Provides first segment after specified basePath" , function( done ){
         // Original requirement:
         // | Using dot-notation, a dev can access identifiers which are named like the first path segment after the 'v1' in his declared API.
         // |     Eg: with path "/my/api/v1/foo" a dev could access: MyApi.foo
@@ -103,8 +103,8 @@ describe( "PathV3Generator" , ()=>{
                     title: "winnie poo",
                 },
                 paths: {
-                    "/my/api/v1/foo": null,
-                    "/my/api/v1/bar": null,
+                    "/my/api/v1/foo/blubb": null,
+                    "/my/api/v1/bar/blubb": null,
                 }
             },
             basePath: "/my/api/v1/",
