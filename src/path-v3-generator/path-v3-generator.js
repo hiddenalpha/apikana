@@ -159,6 +159,7 @@ function createClass( name , node , basePath ){
         basedClass = createJavaCustomType({
             name: "BASED",
             isStatic: true,
+            isFinal: true,
             bodyReadable: bodyForBased,
         });
     }
@@ -173,7 +174,8 @@ function createClass( name , node , basePath ){
     // Compose this class from above parts.
     const thisClass = createJavaCustomType({
         name: thisClassName,
-        isStatic: false,
+        isStatic: segmentStack.length > 0,
+        isFinal: true,
         bodyReadable: StreamUtils.streamConcat([
             ctorReadable,
             resourceField.readable(),
@@ -210,6 +212,7 @@ function createJavaCustomType( options ){
     }
     const access = (options.access ? options.access : "public");
     const isStatic = !!options.isStatic;
+    const isFinal = !!options.isFinal;
     const type = options.type || "class";
     const isAbstract = !!options.isAbstract;
     const typeName = options.name;
@@ -225,6 +228,7 @@ function createJavaCustomType( options ){
         // Start of type.
         that.push( access ); // TODO: Prevent space in case 'access' is empty (package private).
         if( isStatic ){ that.push(" static"); }
+        if( isFinal ){ that.push(" final"); }
         if( isAbstract ){ that.push(" abstract"); }
         that.push( " "+ type +" "+ typeName +" {\n" );
         // Inject body from passed in stream.
