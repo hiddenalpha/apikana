@@ -237,6 +237,50 @@ module.exports = {
                 gulp.dest('model', {cwd: dest}));
         });
 
+        task('generate-3rdGen-constants', ['read-rest-api'], function(){
+            // Imports.
+            const Stream = require('stream');
+            const PathV3Generator = require('./path-v3-generator/path-v3-generator');
+            const JavaGen = require('./java-gen');
+            // Collect required data.
+            const openApi = yaml.load( params.api() );
+            const javaPackage = params.javaPackage();
+            const apiName = ((openApi.info || {}).title || '');
+            const outputFilePath = 'java/' + javaPackage.replace(/\./g, '/') + '/' + JavaGen.classOf(apiName) + '.java';
+            // Setup a generator.
+            const v3Generator = PathV3Generator.createPathV3Generator({
+                openApi:     openApi,
+                javaPackage: javaPackage,
+                basePath:    params.basePath(),
+            });
+            // Wrap the generator with some glue code. Here we simply collect generated
+            // stream and pass it as one File further down the stream.
+            var isRunning = false;
+            const oStream = new Stream.Readable({ objectMode:true , read:function(){
+                if( isRunning ){ return; }else{ isRunning=true; }
+                const contentBuffers = [];
+                // Trigger generator to generate the java code.
+                v3Generator.readable()
+                    // Append received chunks to our collection.
+                    .on( "data" , contentBuffers.push.bind(contentBuffers) )
+                    // Continue below as soon all chunks are collected.
+                    .on( "end" , whenFileCollected )
+                ;
+                function whenFileCollected(){
+                    const file = new File({
+                        path: outputFilePath,
+                        contents: Buffer.concat(contentBuffers)
+                    });
+                    oStream.push( file );
+                    oStream.push( null ); // EOF
+                }
+            }});
+            return oStream
+                // Pipe our files to gulp so he stores those to disk.
+                .pipe( gulp.dest( "model/" , {cwd: dest}) )
+            ;
+        });
+
         task('copy-src', function () {
             if (!params.deploy()) {
                 return emptyStream();
