@@ -91,6 +91,12 @@ function emptyStream() {
 }
 
 
+/**
+ * @param err
+ *      The error to use as only error element for returned readable.
+ * @return {Readable}
+ *      A readable which will result in specified error.
+ */
 function streamFromError( err ){
     var isRunning = false;
     return new Stream.Readable({ read:function(){
