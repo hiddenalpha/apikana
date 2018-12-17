@@ -65,7 +65,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    it( "Generates path classes which reside in package 'com.example.lib.my.api.v1.path'" , function( done ){
+    it( "Generates path classes which reside in specified package" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -73,7 +73,7 @@ describe( "PathV3Generator" , ()=>{
                 },
                 paths: {},
             },
-            javaPackage: "com.example.lib.my.api.v1",
+            javaPackage: "com.example.lib.my.api.v1.path",
         });
 
         victim.readable()
@@ -598,7 +598,7 @@ describe( "PathV3Generator" , ()=>{
                     title: "tick trick track",
                 },
                 paths: {
-                    "/this/path/contains//double/slahes": null,
+                    "/this/path/contains//two/separators/inside": null,
                 }
             },
             javaPackage: "com.example",
@@ -613,7 +613,8 @@ describe( "PathV3Generator" , ()=>{
             .on( "error" , function( err ){
                 const msg = err.message;
                 expect( msg ).toMatch( /slash/i );
-                expect( msg ).toContain( "/this/path/contains//double/slahes" );
+                expect( msg ).toMatch( /double/i );
+                expect( msg ).toContain( "/this/path/contains//two/separators/inside" );
                 setTimeout( done );
             })
         ;
@@ -628,7 +629,7 @@ describe( "PathV3Generator" , ()=>{
                     title: "tick trick track",
                 },
                 paths: {
-                    "/this/path/has/a/slash/at/its/end/": null,
+                    "/this/path/en-ds/with/an/em-pty/seg-ment/": null,
                 },
             },
             javaPackage: "com.example",
@@ -642,8 +643,10 @@ describe( "PathV3Generator" , ()=>{
             })
             .on( "error" , function( err ){
                 const msg = err.message;
-                expect( msg ).toMatch( /slash/i );
-                expect( msg ).toContain( "/this/path/has/a/slash/at/its/end/" );
+                expect( msg ).toMatch( /segment/i );
+                expect( msg ).toMatch( /empty/i );
+                expect( msg ).toMatch( /end/i );
+                expect( msg ).toContain( "/this/path/en-ds/with/an/em-pty/seg-ment/" );
                 setTimeout( done );
             })
         ;

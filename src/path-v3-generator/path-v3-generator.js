@@ -39,7 +39,7 @@ function createPathV3Generator( options ) {
             return StreamUtils.streamFromError( e );
         }
         const firstNodeAfterBasePath = shiftAwayBasePath( rootNode , pathPrefix );
-        const fileBeginReadable = StreamUtils.streamFromString( "package "+ javaPackage +".path;\n\n" );
+        const fileBeginReadable = StreamUtils.streamFromString( "package "+ javaPackage +";\n\n" );
         const rootClass = createClass( rootClassName , firstNodeAfterBasePath , pathPrefix );
         return StreamUtils.streamConcat([
             fileBeginReadable,
@@ -354,10 +354,10 @@ function shiftAwayBasePath( node , pathPrefix ){
             delete actualKeys[key];  // Remove correct key.
             const exampleKey = actualKeys[0];  // Take a random bad key.
             // TODO: Provide full path (not only segment) in this error msg.
-            throw Error( "Segment '"+exampleKey+"' doesn't fit into basePath" );
+            throw Error( "Segment '"+exampleKey+"' doesn't fit into pathPrefix" );
         }else if( actualKeys[0] !== key ){
             // TODO: Provide full path (not only segment) in this error msg.
-            throw Error( "Segment '"+actualKeys[0]+"' doesn't fit into basePath" );
+            throw Error( "Segment '"+actualKeys[0]+"' doesn't fit into pathPrefix" );
         }
         // Don't shift in last iteration.
         node = node[key]; // Shift down one step.
@@ -393,24 +393,27 @@ function splitAllPathsToArrays( paths ){
  *      tree structure.
  */
 function arrange2dSegmentsAsTree( paths ){
-    return toNode( null , {} , 0 );
-    function toNode( name , node , level ){
-        for( var i=0 ; i<paths.length ; ++i ){
-            const parentName = paths[i][level-1];
-            const segment = paths[i][level];
-            if( segment===undefined ) continue;
+    const rootNode = {};
+    for( let i=0 ; i<paths.length ; ++i ){
+        mergeArrayIntoTree( rootNode , paths[i] );
+    }
+    return rootNode;
+    function mergeArrayIntoTree( node , arr ) {
+        for( let i=0 ; i<arr.length ; ++i ){
+            const segment = arr[i];
             if( segment==="" ){
-                if( paths[i][level+1]===undefined ){
-                    throw Error( "Slashes at end of path not allowed in '/"+paths[i].join('/')+"'." );
+                if( i===arr.length-1 ){
+                    throw Error( "Path '/"+arr.join('/')+"' MUST NOT end with an empty segment (aka slash at end)." );
                 }else{
-                    throw Error( "Double slashes not allowed in path '/"+paths[i].join('/')+"'." );
+                    throw Error( "Path '/"+arr.join('/')+"' MUST NOT contain empty path segments (aka double slashes)." );
                 }
             }
-            if( parentName != name ) continue;
-            if( !node[segment] ) node[segment] = {};
-            toNode( segment , node[segment] , level+1 );
+            if( !node[segment] ){
+                node[segment] = {};
+            }
+            // Shift iterator down one step.
+            node = node[segment];
         }
-        return node;
     }
 }
 

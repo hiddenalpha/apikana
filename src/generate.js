@@ -244,7 +244,7 @@ module.exports = {
             const JavaGen = require('./java-gen');
             function noop(){}
             // Vars.
-            const javaPackage = params.javaPackage();
+            const javaPackage = params.javaPackage() +".path";
             const gulpOStream = gulp.dest( "model/" , {cwd: dest});
             const openApi = yaml.load( source +'/'+ params.api() );
             const apiName = ((openApi.info || {}).title || '');
