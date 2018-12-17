@@ -15,6 +15,11 @@ var yaml = require('yamljs');
 var params = require('./params');
 var generateEnv = require('./generate-env');
 var fse = require('fs-extra');
+const Stream = require('stream');
+const PathV3Generator = require('./path-v3-generator/path-v3-generator');
+const JavaGen = require('./java-gen');
+
+function noop(){}
 
 module.exports = {
     generate: function (source, dest) {
@@ -238,16 +243,9 @@ module.exports = {
         });
 
         task('generate-3rdGen-constants', ['copy-src','read-rest-api'], function(){
-            // Imports.
-            const Stream = require('stream');
-            const PathV3Generator = require('./path-v3-generator/path-v3-generator');
-            const JavaGen = require('./java-gen');
-            function noop(){}
-            // Vars.
             const javaPackage = params.javaPackage() +".path";
             const gulpOStream = gulp.dest( "model/" , {cwd: dest});
-            const openApi = yaml.load( source +'/'+ params.api() );
-            const apiName = ((openApi.info || {}).title || '');
+            const apiName = ((restApi.info || {}).title || '');
             const outputFilePath = 'java/' + javaPackage.replace(/\./g, '/') + '/' + JavaGen.classOf(apiName) + '.java';
             // Seems vinyls 'File' isn't designed for streaming. Therefore we'll collect
             // our generated code here and pass it as one huge chunk (aka vinyl File) to
@@ -257,9 +255,9 @@ module.exports = {
                 const contentBuffers = [];
                 // Instantiate a generator.
                 PathV3Generator.createPathV3Generator({
-                        openApi:     openApi,
+                        openApi:     restApi,
                         javaPackage: javaPackage,
-                        pathPrefix:    params.pathPrefix(),
+                        pathPrefix:  params.pathPrefix(),
                     })
                     .readable()
                     // Append received chunks to our collection.

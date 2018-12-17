@@ -111,12 +111,12 @@ function createCollectionField() {
  *      Name of the class to generate.
  * @param node {Map.<string,node>}
  *      The tree node to generate the class for.
- * @param basePath {string}
+ * @param pathPrefix {string}
  *      Common base of all paths. Those segments will not be available in
  *      generated classes. Instead, first available segment will be segment
  *      after that specified base.
  */
-function createClass( name , node , basePath ){
+function createClass( name , node , pathPrefix ){
     if( DEBUG ){
         if( !name ) throw Error("Arg 'name' expected not to be falsy");
     }
@@ -154,7 +154,7 @@ function createClass( name , node , basePath ){
     }else{
         const bodyForBased_parts = [];
         Object.keys( node ).forEach(function( segment ){
-            const childClass = createClass( segment , node[segment] , basePath , [segment] , true ); // Go recursive here.
+            const childClass = createClass( segment , node[segment] , pathPrefix , [segment] , true ); // Go recursive here.
             bodyForBased_parts.push( childClass );
         });
         const bodyForBased = StreamUtils.streamConcat( bodyForBased_parts.map(e=>e.readable()) );
@@ -169,7 +169,7 @@ function createClass( name , node , basePath ){
     // Setup child classes.
     const childClasses = [];
     Object.keys( node ).forEach(function( segment ){
-        const childClass = createClass( segment , node[segment] , basePath , segmentStack.concat([segment]) , isBased ); // Go recursive here.
+        const childClass = createClass( segment , node[segment] , pathPrefix , segmentStack.concat([segment]) , isBased ); // Go recursive here.
         childClasses.push( childClass );
     });
 
@@ -339,7 +339,7 @@ function transformPathsToTree( paths ){
  * @param pathPrefix {string}
  *      Path to remove from specified rootNode.
  * @return
- *      Node representing latest segment present in specified basePath.
+ *      Node representing latest segment present in specified pathPrefix.
  */
 function shiftAwayBasePath( node , pathPrefix ){
     pathPrefix = UrlUtils.dropSurroundingSlashes( pathPrefix );

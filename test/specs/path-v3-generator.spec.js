@@ -591,7 +591,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    it( "Failfast when called with double slashes in paths" , function( done ){
+    it( "Failfast when paths contain empty segments" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
