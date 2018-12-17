@@ -16,6 +16,7 @@ var params = require('./params');
 var generateEnv = require('./generate-env');
 var fse = require('fs-extra');
 const Stream = require('stream');
+const StreamUtils = require('./util/stream-utils');
 const PathV3Generator = require('./path-v3-generator/path-v3-generator');
 const JavaGen = require('./java-gen');
 
@@ -243,8 +244,13 @@ module.exports = {
         });
 
         task('generate-3rdGen-constants', ['copy-src','read-rest-api'], function(){
-            const javaPackage = params.javaPackage() +".path";
+            const generate3rdGenPaths = params.generate3rdGenPaths();
             const gulpOStream = gulp.dest( "model/" , {cwd: dest});
+            if( !generate3rdGenPaths ){
+                log.warn( "3rd generation paths are disabled (--generate3rdGenPaths). Skip." );
+                return StreamUtils.emptyStream().pipe( gulpOStream );
+            }
+            const javaPackage = params.javaPackage() +".path";
             const apiName = ((restApi.info || {}).title || '');
             const outputFilePath = 'java/' + javaPackage.replace(/\./g, '/') + '/' + JavaGen.classOf(apiName) + '.java';
             // Seems vinyls 'File' isn't designed for streaming. Therefore we'll collect
