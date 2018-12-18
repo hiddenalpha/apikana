@@ -2,8 +2,8 @@
 
 const JavaParser = require("java-parser");
 const Yaml = require("yamljs");
-const PathV3Generator = require("src/path-v3-generator/path-v3-generator");
-const StreamUtils = require("src/util/stream-utils");
+const PathV3Generator = require("../../src/path-v3-generator/path-v3-generator");
+const StreamUtils = require("../../src/util/stream-utils");
 
 
 function noop(){}

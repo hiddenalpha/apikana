@@ -1,7 +1,7 @@
 "use strict";
 
 
-const UrlUtils = require("src/url-utils");
+const UrlUtils = require("../../src/url-utils");
 
 
 describe( "url-utils.dropLeadingSlashes" , function(){
