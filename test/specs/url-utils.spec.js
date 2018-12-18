@@ -25,3 +25,26 @@ describe( "url-utils.dropLeadingSlashes" , function(){
 
 
 });
+
+
+describe( "url-utils.dropTrailingSlashes" , function(){
+
+
+    it( "Drops trailing slashes" , function( done ){
+        // Shorthand for simpler testing.
+        const dts = UrlUtils.dropTrailingSlashes.bind( UrlUtils );
+
+        expect( dts("/foo/bar/")    ).toBe( "/foo/bar"    );
+        expect( dts("foo/bar/")     ).toBe( "foo/bar"     );
+        expect( dts("////////")     ).toBe( ""            );
+        expect( dts("foo////bar")   ).toBe( "foo////bar"  );
+        expect( dts("")             ).toBe( ""            );
+        expect( dts("noSlashHere")  ).toBe( "noSlashHere" );
+        expect( dts("//foo//bar//") ).toBe( "//foo//bar"  );
+        expect( dts("/////a////")   ).toBe( "/////a"      );
+
+        done();
+    });
+
+
+});
