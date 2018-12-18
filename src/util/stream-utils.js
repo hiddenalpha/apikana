@@ -2,15 +2,10 @@
 
 
 exports.createStringWritable = createStringWritable;
-
 exports.streamConcat = streamConcat;
-
 exports.streamFromError = streamFromError;
-
 exports.streamFromString = streamFromString;
-
 exports.emptyStream = emptyStream;
-
 exports.createLinePrefixStream = createLinePrefixStream;
 
 
@@ -53,22 +48,28 @@ function createStringWritable() {
 
 /**
  * @param streams {Array<Readable>}
+ * @param [options.finalize=true] {boolean}
+ *      Define if the stream gets closed when all specified streams got
+ *      forwarded.
+ * @param [options.objectMode=false] {boolean}
+ *      Specifies behavior for this stream as specified by nodejs streams.
  * @return {Readable}
  *      A readable containing all passed in readables.
  */
 function streamConcat( streams , options ){
     if( !options ) options = {};
+    const objectMode = (options.objectMode === undefined ? false : options.objectMode );
     const finalize = (options.finalize === undefined) ? true : options.finalize;
     options = null;
     streams = streams.slice( 0 ); // Make a copy to resist changes from outside.
-    const that = new Stream.Readable({ read:read });
+    const that = new Stream.Readable({ objectMode:objectMode , read:read });
     var isRunning = false;
     return that;
     function read( n ){
         if( isRunning ){ return; }else{ isRunning=true; }
         (function handleNextSrcStream(){
             const stream = streams.shift();
-            if( stream ) {
+            if( stream ){
                 stream.on( "data" , that.push.bind(that) );
                 stream.on( "end" , handleNextSrcStream );
                 stream.on( "error" , that.emit.bind(that,"error") );
