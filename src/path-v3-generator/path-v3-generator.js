@@ -123,18 +123,21 @@ function createClass( name , node , pathPrefix ){
 
     // Extract hidden args (recursion state).
     const segmentStack = Array.isArray(arguments[3]) ? arguments[3] : [];
-    const isBased = !!arguments[4];
+    /** 'null' when not based or integer offset instead. */
+    const baseOffset = (!isNaN(arguments[4]) ? arguments[4] : null);
 
     const thisClassName = segmentToConstantName( name );
 
     // Setup constructor
     const ctorReadable = StreamUtils.streamFromString( "private "+ thisClassName +"(){}\n" );
 
-    // Setup constants. Don't generate them if they're only a single slash.
-    const resourceFieldPath = segmentStack.join('/');
+    // Setup constants.
+    // 'slice' only when offset is required (baseOffset not null).
+    const resourceFieldPath = (isNaN(baseOffset)?segmentStack:segmentStack.slice(baseOffset)).join('/');
     var resourceField;
     var collectionField;
     if( resourceFieldPath === '' ){
+        // Don't generate them if they would be empty.
         resourceField = collectionField = {
             readable: StreamUtils.emptyStream.bind(0),
         };
@@ -147,29 +150,30 @@ function createClass( name , node , pathPrefix ){
 
     // Setup BASED class in case we're not already based.
     var basedClass;
-    if( isBased ){
-        basedClass = {
-            readable: StreamUtils.emptyStream.bind(0),
-        };
-    }else{
-        const bodyForBased_parts = [];
+    if( baseOffset === null ){
+        // Not based yet. Enter BASED now.
+        const bodyForBased = [];
         Object.keys( node ).forEach(function( segment ){
-            const childClass = createClass( segment , node[segment] , pathPrefix , [segment] , true ); // Go recursive here.
-            bodyForBased_parts.push( childClass );
+            const childClass = createClass( segment , node[segment] , pathPrefix , segmentStack.concat([segment]) , segmentStack.length ); // Go recursive here.
+            bodyForBased.push( childClass );
         });
-        const bodyForBased = StreamUtils.streamConcat( bodyForBased_parts.map(e=>e.readable()) );
         basedClass = createJavaCustomType({
             name: "BASED",
             isStatic: true,
             isFinal: true,
-            bodyReadable: bodyForBased,
+            bodyReadable: StreamUtils.streamConcat( bodyForBased.map(e=>e.readable()) ),
         });
+    }else{
+        // Already based. Don't generate nested 'BASED' classes.
+        basedClass = {
+            readable: StreamUtils.emptyStream.bind(0),
+        };
     }
 
     // Setup child classes.
     const childClasses = [];
     Object.keys( node ).forEach(function( segment ){
-        const childClass = createClass( segment , node[segment] , pathPrefix , segmentStack.concat([segment]) , isBased ); // Go recursive here.
+        const childClass = createClass( segment , node[segment] , pathPrefix , segmentStack.concat([segment]) , baseOffset ); // Go recursive here.
         childClasses.push( childClass );
     });
 

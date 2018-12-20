@@ -48,6 +48,7 @@ function createStringWritable() {
 
 /**
  * @param streams {Array<Readable>}
+ * @param [options={}]
  * @param [options.finalize=true] {boolean}
  *      Define if the stream gets closed when all specified streams got
  *      forwarded.
