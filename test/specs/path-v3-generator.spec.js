@@ -64,7 +64,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    it( "Generates path classes which reside in specified package" , function( done ){
+    it( "Generated class reside in specified package" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -719,16 +719,4 @@ function createJavaParserNodeIterator( node ){
             }
         }
     };
-}
-
-
-function expectArrayToEqual( actualArr , expectedArr ) {
-    expect( Array.isArray(actualArr)   ).toEqual( true );
-    expect( Array.isArray(expectedArr) ).toEqual( true );
-    expect( actualArr.length ).toEqual( expectedArr.length );
-    for( let i=0 ; i<expectedArr.length ; ++i ){
-        const actualElem = actualArr[i];
-        const expectedElem = expectedArr[i];
-        expect( actualElem ).toEqual( expectedElem );
-    }
 }
