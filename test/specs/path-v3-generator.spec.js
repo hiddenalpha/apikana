@@ -1,7 +1,6 @@
 ;"use strict";
 
 const JavaParser = require("java-parser");
-const Yaml = require("yamljs");
 const PathV3Generator = require("../../src/path-v3-generator/path-v3-generator");
 const StreamUtils = require("../../src/util/stream-utils");
 
@@ -653,6 +652,52 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
+    xit( "Will append an undersocre everytime same segment occurs again in same path" , function( done ){
+        const victim = PathV3Generator.createPathV3Generator({
+            openApi: {
+                info: {
+                    title: "foo bar"
+                },
+                paths: {
+                    "/foo/foo/bar/foo/bar/bar/foo/foo": null,
+                }
+            },
+            javaPackage: "com.example",
+        });
+
+        victim.readable()
+            .pipe( StreamUtils.createStringWritable() )
+            .then( assertResult )
+        ;
+
+        function assertResult( result ){
+            const compilationUnit = JavaParser.parse( result , {});
+            const expectedIdentifierNames = [
+                "foo", "foo_", "bar", "foo__", "bar_", "bar__", "foo___", "foo____",
+            ];
+            var i = 0;
+            var isDone = false;
+            const identifierNames = [];
+            createJavaParserNodeIterator( compilationUnit ).forEach(function( node ){
+                if( isDone ){
+                    // Ignore
+                }else if( node.node==="TypeDeclaration" ){
+                    if( node.name.identifier==="BASED" ){
+                        expect( identifierNames.length ).toEqual( expectedIdentifierNames.length );
+                        isDone = true;
+                    }else if( node.name.identifier !== "FooBar" && node.name.identifier !== "BASED" ){
+                        const name = node.name.identifier;
+                        expect( name ).toEqual( expectedIdentifierNames[i] );
+                        identifierNames.push( name );
+                        i += 1;
+                    }
+                }
+            });
+            done();
+        }
+    });
+
+
 });
 
 
@@ -674,4 +719,16 @@ function createJavaParserNodeIterator( node ){
             }
         }
     };
+}
+
+
+function expectArrayToEqual( actualArr , expectedArr ) {
+    expect( Array.isArray(actualArr)   ).toEqual( true );
+    expect( Array.isArray(expectedArr) ).toEqual( true );
+    expect( actualArr.length ).toEqual( expectedArr.length );
+    for( let i=0 ; i<expectedArr.length ; ++i ){
+        const actualElem = actualArr[i];
+        const expectedElem = expectedArr[i];
+        expect( actualElem ).toEqual( expectedElem );
+    }
 }
