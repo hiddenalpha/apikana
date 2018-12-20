@@ -652,7 +652,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    xit( "Will append an undersocre everytime same segment occurs again in same path" , function( done ){
+    it( "Will append an undersocre everytime same segment occurs again in same path" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {

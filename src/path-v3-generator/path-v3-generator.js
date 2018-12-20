@@ -126,7 +126,7 @@ function createClass( name , node , pathPrefix ){
     /** 'null' when not based or integer offset instead. */
     const baseOffset = (!isNaN(arguments[4]) ? arguments[4] : null);
 
-    const thisClassName = segmentToConstantName( name );
+    const thisClassName = mangleNameToDifferFromEarlierEqualSegments( segmentToConstantName(name) , segmentStack.slice(0,segmentStack.length-1) );
 
     // Setup constructor
     const ctorReadable = StreamUtils.streamFromString( "private "+ thisClassName +"(){}\n" );
@@ -441,6 +441,32 @@ function segmentToConstantName( segment ) {
     }
     ans = escapeForJavaIdentifier( ans );
     return ans;
+}
+
+
+/**
+ * <p>This will append an underscore to specified className everytime className
+ * already is used earlier to prevent name conflicts.</p>
+ *
+ * @param className {string}
+ *      The identifier we want to use as our class name.
+ * @param segmentStack {Array<string>}
+ *      Segments, which are in path before our current segment.
+ * @return {string}
+ *      The mangled className.
+ */
+function mangleNameToDifferFromEarlierEqualSegments( className , segmentStack ){
+    let suffix = "";
+    for( let i=0,iLen=segmentStack.length ; i<iLen ; ++i ){
+        if( segmentToConstantName(segmentStack[i]) === className ){
+            // Append one more
+            suffix += '_';
+        }
+    }
+    if( suffix.length > 0 ){
+        className += suffix;
+    }
+    return className;
 }
 
 
