@@ -20,8 +20,6 @@ const StreamUtils = require('./util/stream-utils');
 const PathV3Generator = require('./path-v3-generator/path-v3-generator');
 const JavaGen = require('./java-gen');
 
-function noop(){}
-
 module.exports = {
     generate: function (source, dest) {
         var uiPath = path.resolve(dest, 'ui');
@@ -251,6 +249,7 @@ module.exports = {
                 return StreamUtils.emptyStream().pipe( gulpOStream );
             }
             const javaPackage = params.javaPackage() +".path";
+            // Below evaluation copied from 2ndGen Generator.
             const apiName = ((restApi.info || {}).title || '');
             const outputFilePath = 'java/' + javaPackage.replace(/\./g, '/') + '/' + JavaGen.classOf(apiName) + '.java';
             // Seems vinyls 'File' isn't designed for streaming. Therefore we'll collect

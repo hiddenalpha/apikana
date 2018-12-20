@@ -4,7 +4,7 @@
 exports.createPathV3Generator = createPathV3Generator;
 
 
-// Private ///////////
+// Private ////////////////////////////////////////////////////////////////////
 
 const Stream = require( "stream" );
 
@@ -14,9 +14,26 @@ const StreamUtils = require('../util/stream-utils');
 const UrlUtils = require('../url-utils');
 
 const DEBUG = (process.env.DEBUG !== undefined);
+
 function noop(){}
 
 
+/**
+ * @param [options={}]
+ * @param options.openApi {object}
+ *      The open api spec for the api where we want to build the paths class
+ *      for.
+ * @param options.openApi.info.title {string}
+ *      Required because this will be used to generate the name of the
+ *      resulting class.
+ * @param options.javaPackage {string}
+ *      The java package where the generated class will reside in.
+ * @param options.pathPrefix
+ *      The common path prefix which will be implicitly available without need
+ *      to specify them explicitly.
+ * @return {{readable: createReadable}}
+ *      A readable streaming the generated class.
+ */
 function createPathV3Generator( options ) {
     if( !options ) options = {};
     throwIfPathV3GeneratorOptionsBad( options );
@@ -46,24 +63,32 @@ function createPathV3Generator( options ) {
             rootClass.readable()
         ]);
     }
-    function throwIfPathV3GeneratorOptionsBad( options ){
-        if( !options.openApi ) throw Error("Arg 'options.openApi' missing.");
+}
 
-        if( !options.openApi.info ) throw Error("Arg 'options.openApi.info' missing.");
-        if( !options.openApi.info.title ) throw Error("Arg 'options.openApi.info.title' missing.");
 
-        if( !options.javaPackage ) throw Error("Arg 'options.javaPackage' missing.");
-        if( typeof(options.javaPackage) !== "string" ) throw Error( "Arg 'options.javaPackage' string expected but got '"+typeof(options.javaPackage)+"'" );
-        if( !/^(?![0-9])(?!.*\.[0-9])[A-Za-z0-9.]+$/.test(options.javaPackage) ) throw Error( "Illegal chars in javaPackage" );
+function throwIfPathV3GeneratorOptionsBad( options ){
+    if( !options.openApi ) throw Error("Arg 'options.openApi' missing.");
 
-        if( !options.pathPrefix ){
-            Log.debug("'options.pathPrefix' not set. Assume empty.");
-            options.pathPrefix = "";
-        }
+    if( !options.openApi.info ) throw Error("Arg 'options.openApi.info' missing.");
+    if( !options.openApi.info.title ) throw Error("Arg 'options.openApi.info.title' missing.");
+
+    if( !options.javaPackage ) throw Error("Arg 'options.javaPackage' missing.");
+    if( typeof(options.javaPackage) !== "string" ) throw Error( "Arg 'options.javaPackage' string expected but got '"+typeof(options.javaPackage)+"'" );
+    if( !/^(?![0-9])(?!.*\.[0-9])[A-Za-z0-9.]+$/.test(options.javaPackage) ) throw Error( "Illegal chars in javaPackage" );
+
+    if( !options.pathPrefix ){
+        Log.debug("'options.pathPrefix' not set. Assume empty.");
+        options.pathPrefix = "";
     }
 }
 
 
+/**
+ * @param [options={}]
+ * @param options.path {string}
+ *      The path this resource will contain as its value.
+ * @return {{readable: (function())}}
+ */
 function createResourceField( options ){
     if( !options ) options = {};
     if( DEBUG ){
@@ -115,6 +140,9 @@ function createCollectionField() {
  *      Common base of all paths. Those segments will not be available in
  *      generated classes. Instead, first available segment will be segment
  *      after that specified base.
+ * @return {{readable:function(){}}
+ *      An object where method 'readable' will return a new readable which
+ *      will stream the generated class.
  */
 function createClass( name , node , pathPrefix ){
     if( DEBUG ){
@@ -171,10 +199,10 @@ function createClass( name , node , pathPrefix ){
     }
 
     // Setup child classes.
-    const childClasses = [];
+    const childClassReadables = [];
     Object.keys( node ).forEach(function( segment ){
         const childClass = createClass( segment , node[segment] , pathPrefix , segmentStack.concat([segment]) , baseOffset ); // Go recursive here.
-        childClasses.push( childClass );
+        childClassReadables.push( childClass.readable() );
     });
 
     // Compose this class from above parts.
@@ -186,7 +214,7 @@ function createClass( name , node , pathPrefix ){
             ctorReadable,
             resourceField.readable(),
             collectionField.readable(),
-            StreamUtils.streamConcat( childClasses.map(e=>e.readable()) ),
+            StreamUtils.streamConcat( childClassReadables ),
             basedClass.readable(),
         ]),
     });
@@ -199,8 +227,12 @@ function createClass( name , node , pathPrefix ){
  *
  * @param options.name {string}
  *      Name of the type.
+ * @param [options.access=public] {string}
+ *      Access modifier for type to geenrate. One of '', 'public', 'protected',
+ *      'private'.
  * @param [options.isStatic=false] {boolean}
- * @param [options.type=class] {string
+ * @param [options.isFinal=false] {boolean}
+ * @param [options.type=class] {string}
  *      Either 'class', 'interface' or 'enum'.
  * @param [options.isAbstract=false] {boolean}
  * @param [options.bodyReadable=null] {Readable}
@@ -215,6 +247,7 @@ function createJavaCustomType( options ){
         if( !options.name ){ throw Error( "Arg 'options.name' missing." ); }
         if( typeof(options.bodyReadable)==="undefined" ) throw Error( "Arg 'options.bodyReadable' missing." );
         if( options.type && ["class","interface","enum"].indexOf(options.type) === -1 ) throw Error("Illegal type '"+ options.type +"'.");
+        if( options.access && ["","public","protected","private"].indexOf(options.access) === -1 ) throw Error("Arg 'options.access': Illegal value '"+ options.access +"'.");
     }
     const access = (options.access ? options.access : "public");
     const isStatic = !!options.isStatic;
@@ -261,7 +294,7 @@ function createJavaCustomType( options ){
 
 /**
  * @param options.type {string}
- *      Type of the wariable.
+ *      Type of the variable.
  * @param options.name {string}
  *      Name for the variable.
  * @param [options.access=""] {""|"public"|"protected"|"private"}
@@ -320,7 +353,7 @@ function createJavaVariable( options ) {
  * @param paths {Map<String,any>}
  *		The paths to transform. Actually this methods uses the keys of the
  *		passed map as paths.
- * @return {Map<Map<any>>}
+ * @return {Map<string,Map<any>>}
  *		A tree representing the passed in paths.
  */
 function transformPathsToTree( paths ){
@@ -363,7 +396,6 @@ function shiftAwayBasePath( node , pathPrefix ){
             // TODO: Provide full path (not only segment) in this error msg.
             throw Error( "Segment '"+actualKeys[0]+"' doesn't fit into pathPrefix" );
         }
-        // Don't shift in last iteration.
         node = node[key]; // Shift down one step.
     }
     return node;
@@ -373,7 +405,7 @@ function shiftAwayBasePath( node , pathPrefix ){
 /**
  * <p>Takes an array of paths and splits them all to segments.</p>
  *
- * @param {Array<String>}
+ * @param paths {Map<String,String>}
  * @return {Array<Array<string>>}
  */
 function splitAllPathsToArrays( paths ){
@@ -393,7 +425,7 @@ function splitAllPathsToArrays( paths ){
  * @param paths {Array<Array<string>>}
  *      Array of array of path-segments to transform into a tree.
  * @return {Map<Map<...>>}
- *      Nested objects where the property names represent a path segment. AKA
+ *      Nested objects where the property names represent a path segment. Aka
  *      tree structure.
  */
 function arrange2dSegmentsAsTree( paths ){

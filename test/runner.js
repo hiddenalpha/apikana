@@ -3,10 +3,10 @@
 
 const Jasmine = require( "jasmine" );
 
-const DEBUG = typeof(process.env.DEBUG) != "undefined";
+const DEBUG = typeof(process.env.DEBUG) !== "undefined";
 
 
-if( require.main == module ) setTimeout( main );
+if( require.main === module ) setTimeout( main );
 
 
 function main(){

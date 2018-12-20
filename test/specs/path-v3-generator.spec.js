@@ -23,7 +23,7 @@ describe( "PathV3Generator" , ()=>{
                     openApi:{ info: { title:"asdf" } },
                     javaPackage: javaPackage
                 });
-                expect( "Throw an Error when using javaPackage=\""+javaPackage+"\"" ).toBe( "behavior" );
+                fail( "Expected to throw when using javaPackage=\""+javaPackage+"\"" );
             }catch( err ){
                 expect( err.message ).toMatch( /javaPackage/i );
             }
@@ -64,7 +64,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    it( "Generated class reside in specified package" , function( done ){
+    it( "Places generated class into specified package" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -93,9 +93,6 @@ describe( "PathV3Generator" , ()=>{
 
 
     it( "Provides first segment after specified basePath" , function( done ){
-        // Original requirement:
-        // | Using dot-notation, a dev can access identifiers which are named like the first path segment after the 'v1' in his declared API.
-        // |     Eg: with path "/my/api/v1/foo" a dev could access: MyApi.foo
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -128,9 +125,6 @@ describe( "PathV3Generator" , ()=>{
 
 
     it( "Provides MyApi.one.two.three when using path '/my/api/v1/one/two/three'" , function( done ){
-        // Original requirement:
-        // | On such identifiers a dev recursively can access all the path segments through similar identifiers.
-        // |     Eg: with path "/my/api/v1/one/two/three" a dev could access: MyApi.one.two.three
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -163,10 +157,6 @@ describe( "PathV3Generator" , ()=>{
 
 
     it( "Provides RESOURCE identifier with leading, but without trailing slash" , function( done ){
-        // Original requirement:
-        // |   On every such identifier there's a reserved identifier "RESOURCE" available. This identifier is a String containing the full path, without a trailing slash.
-
-        // Setup & configure a generator instance.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 "info": {
@@ -273,11 +263,7 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
-    it( "Provides BASED identifier where we can continue with following-up segments" , function( done ){
-        // Original spec:
-        // Also on every segment identifier there's a "BASED" available. After this
-        // identifier, a dev can continue to list follow-up path segments same as when
-        // "BASE" wouldn't be used.
+    it( "Provides BASED identifier where we can continue with follow-up segments" , function( done ){
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -311,8 +297,6 @@ describe( "PathV3Generator" , ()=>{
 
 
     it( "The BASED identifier is only available once in a chain" , function( done ){
-        //    The "BASED" identifier is only available once in this chain.
-        //        Eg: MyApiPaths.foo.BASED.bar.BASED wouldn't be possible.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -345,8 +329,6 @@ describe( "PathV3Generator" , ()=>{
 
 
     it( "Puts only segments after BASED identifier into the constant" , function( done ){
-        //    When using RESOURCE/COLLECTION somewhere behind BASED, the string will only contain path segments mentioned after the BASED identifier.
-        //        Eg:  Using MyApi.one.BASED.two.three.COLLECTION the path would be "/two/three/".
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -391,9 +373,6 @@ describe( "PathV3Generator" , ()=>{
 
 
     it( "Adds a dollar sign to segments which are a variable" , function( done ){
-        //    In case a segment is a variable, it will wear a $ (dollar sign) at end of its name.
-        //        Eg: Using MyApi.one.two$.three.four$.five would result in "/my/api/v1/one/{two}/three/{four}/five".
-        //        There will either only the default or the variable be available. But not both.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -427,7 +406,6 @@ describe( "PathV3Generator" , ()=>{
 
 
     it( "Replaces chars not allowed in java identifiers by an underscore char" , function( done ){
-        //    If a segment contains chars not allowed in java identifiers then they will be replaced with _ (underscore).
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -470,7 +448,6 @@ describe( "PathV3Generator" , ()=>{
 
 
     it( "Will fail when substitution of illegal chars would produce a name conflict" , function( done ){
-        // In case of a name conflict due to this replacement, Apikana will fail-fast.
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {
@@ -504,7 +481,6 @@ describe( "PathV3Generator" , ()=>{
 
 
     it( "Prepends an additional underscore char to generated identifier when they're a reserved word in java" , function( done ){
-        //    If a segment is same as a reserved word in java then it will wear an additional _ (underscore) at the begin (end).
         const victim = PathV3Generator.createPathV3Generator({
             openApi: {
                 info: {

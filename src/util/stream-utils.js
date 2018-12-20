@@ -1,4 +1,4 @@
-"use strict";
+;"use strict";
 
 
 exports.createStringWritable = createStringWritable;
@@ -9,7 +9,7 @@ exports.emptyStream = emptyStream;
 exports.createLinePrefixStream = createLinePrefixStream;
 
 
-// Impl //////////////
+// Private ////////////////////////////////////////////////////////////////////
 
 const Stream = require("stream");
 
@@ -133,7 +133,7 @@ function createLinePrefixStream( options ){
     if( !options ) options = {};
     const prefix = options.prefix;
     if( typeof(prefix) !== "string" ){ throw TypeError("Arg 'prefix' expected to be string."); }
-    options = null; // Don't use that longer.
+    options = null; // Prevent later usage.
     const that = new Stream.Duplex({ read:read , write:onInput });
     var previousCharWasNewline = true;
     that.on( "finish" , that.push.bind(that,null) );

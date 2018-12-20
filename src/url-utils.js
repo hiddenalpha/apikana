@@ -7,7 +7,7 @@ exports.dropTrailingSlashes = dropTrailingSlashes;
 exports.dropSurroundingSlashes = dropSurroundingSlashes;
 
 
-// Impl //////////////
+// Private ////////////////////////////////////////////////////////////////////
 
 /**
  * <p>Filter, removing all leading slashes from given string.</p>
