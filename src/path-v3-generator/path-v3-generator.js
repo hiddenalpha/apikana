@@ -393,33 +393,37 @@ function shiftAwayBasePath( node , pathPrefix ){
         const key = pathPrefix[i];
         const actualKeys = Object.keys( node );
         if( actualKeys.length > 1 ){
-            // Collect data for error msg.
+            // Error: We found multiple segments for this level. This is not possible
+            // because two different segments cannot match the same segment from
+            // path-prefix.
             var badKey = null;
+            // Find first mismatching segment.
             for( let i=0 ; i<actualKeys.length ; ++i ){
                 if( actualKeys[i] !== key ){
                     badKey = actualKeys[i];
                     break;
                 }
             }
-            var fullPath = getFullPath(badKey);
-            throw Error( "Path '"+fullPath+"' doesn't fit into path-prefix '/"+pathPrefix.join('/')+"/'" );
+            throwSegmentMismatchError( badKey );
         }else if( actualKeys[0] !== key ){
-            // TODO: Provide full path (not only segment) in this error msg.
-            var fullPath = getFullPath(actualKeys[0] );
-            throw Error( "Path '"+fullPath+"' doesn't fit into path-prefix '/"+pathPrefix.join('/')+"/'" );
+            // Error: Current segment doesn't match our segment from path-prefix.
+            throwSegmentMismatchError( actualKeys[0] );
         }
         segmentStack.push( key );
         node = node[key]; // Shift down one step.
     }
     return node;
-    function getFullPath( currentSegment ) {
+    function throwSegmentMismatchError( currentSegment ) {
+        // Start full path by available stack.
         var fullPath = '/'+ segmentStack.join('/');
+        // Append the current segment.
         if( !fullPath.endsWith('/') ){ fullPath+='/'; }
         fullPath += currentSegment;
+        // Also append the later segments we've not iterated yet.
         for( let x=node[currentSegment],subKey ; subKey=Object.keys(x)[0] ; x=x[subKey] ){
             fullPath += '/'+ subKey;
         }
-        return fullPath;
+        throw Error( "Path '"+fullPath+"' doesn't fit into path-prefix '/"+pathPrefix.join('/')+"/'" );
     }
 }
 
