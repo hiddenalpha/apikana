@@ -401,21 +401,26 @@ function shiftAwayBasePath( node , pathPrefix ){
                     break;
                 }
             }
-            var fullPath = '/'+ segmentStack.join('/');
-            if( !fullPath.endsWith('/') ){ fullPath+='/'; }
-            fullPath += badKey;
-            for( let x=node[badKey],subKey ; subKey=Object.keys(x)[0] ; x=x[subKey] ){
-                fullPath += '/'+ subKey;
-            }
+            var fullPath = getFullPath(badKey);
             throw Error( "Path '"+fullPath+"' doesn't fit into path-prefix '/"+pathPrefix.join('/')+"/'" );
         }else if( actualKeys[0] !== key ){
             // TODO: Provide full path (not only segment) in this error msg.
-            throw Error( "Segment '"+actualKeys[0]+"' doesn't fit into pathPrefix" );
+            var fullPath = getFullPath(actualKeys[0] );
+            throw Error( "Path '"+fullPath+"' doesn't fit into path-prefix '/"+pathPrefix.join('/')+"/'" );
         }
         segmentStack.push( key );
         node = node[key]; // Shift down one step.
     }
     return node;
+    function getFullPath( currentSegment ) {
+        var fullPath = '/'+ segmentStack.join('/');
+        if( !fullPath.endsWith('/') ){ fullPath+='/'; }
+        fullPath += currentSegment;
+        for( let x=node[currentSegment],subKey ; subKey=Object.keys(x)[0] ; x=x[subKey] ){
+            fullPath += '/'+ subKey;
+        }
+        return fullPath;
+    }
 }
 
 
