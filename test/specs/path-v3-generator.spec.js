@@ -752,6 +752,42 @@ describe( "PathV3Generator" , ()=>{
     });
 
 
+    it( "Will fail-fast if a single path mismatches path-prefix" , function( done ){
+        const victim = PathV3Generator.createPathV3Generator({
+            openApi: {
+                info: {
+                    title: "foo blubb API",
+                },
+                paths: {
+                    "/foo/v2/bad/version": null,
+                }
+            },
+            javaPackage: "com.example",
+            pathPrefix: "/foo/v1/",
+        });
+
+        const myFail = function( ctxt ){
+            if( ctxt.alreadyFailed ){ return; }else{ ctxt.alreadyFailed=true; }
+            fail( "No data expected" );
+            done();
+        }.bind(0,{ alreadyFailed:false });
+
+        victim.readable()
+            // Neither data nor end expected.
+            .on( "data" , myFail ).on( "end" , myFail )
+            // We only expect an error.
+            .on( "error" , function( err ){
+                const msg = err.message;
+                // The path is mentioned.
+                expect( msg ).toContain( "/foo/v2/bad/version" );
+                // Also the path-prefix is mentioned.
+                expect( msg ).toContain( "/foo/v1/" );
+                done();
+            })
+        ;
+    });
+
+
 });
 
 
