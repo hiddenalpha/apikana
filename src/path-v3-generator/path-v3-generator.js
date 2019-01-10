@@ -392,35 +392,31 @@ function shiftAwayBasePath( node , pathPrefix ){
     for( let i=0 ; i<pathPrefix.length ; ++i ){
         const key = pathPrefix[i];
         const actualKeys = Object.keys( node );
-        if( actualKeys.length > 1 ){
-            // Error: We found multiple segments for this level. This is not possible
-            // because two different segments cannot match the same segment from
-            // path-prefix.
-            var badKey = null;
-            // Find first mismatching segment.
-            for( let i=0 ; i<actualKeys.length ; ++i ){
-                if( actualKeys[i] !== key ){
-                    badKey = actualKeys[i];
-                    break;
-                }
-            }
-            throwSegmentMismatchError( badKey );
-        }else if( actualKeys[0] !== key ){
-            // Error: Current segment doesn't match our segment from path-prefix.
-            throwSegmentMismatchError( actualKeys[0] );
+        if( actualKeys.length > 1 || actualKeys[0] !== key ){
+            // Error: We either found multiple segments for this level or the only segment
+            // doesn't match path-prefix.
+            throwSegmentMismatchError( actualKeys , key );
         }
         segmentStack.push( key );
         node = node[key]; // Shift down one step.
     }
     return node;
-    function throwSegmentMismatchError( currentSegment ) {
+    function throwSegmentMismatchError( actualSegments , pathPrefixSegment ){
+        // Find first mismatching segment.
+        var badKey = null;
+        for( let i=0 ; i<actualSegments.length ; ++i ){
+            if( actualSegments[i] !== pathPrefixSegment ){
+                badKey = actualSegments[i];
+                break;
+            }
+        }
         // Start full path by available stack.
         var fullPath = '/'+ segmentStack.join('/');
         // Append the current segment.
         if( !fullPath.endsWith('/') ){ fullPath+='/'; }
-        fullPath += currentSegment;
+        fullPath += badKey;
         // Also append the later segments we've not iterated yet.
-        for( let x=node[currentSegment],subKey ; subKey=Object.keys(x)[0] ; x=x[subKey] ){
+        for( let it=node[badKey],subKey ; subKey=Object.keys(it)[0] ; it=it[subKey] ){
             fullPath += '/'+ subKey;
         }
         throw Error( "Path '"+fullPath+"' doesn't fit into path-prefix '/"+pathPrefix.join('/')+"/'" );
