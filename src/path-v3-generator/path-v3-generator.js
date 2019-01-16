@@ -95,7 +95,8 @@ function createResourceField( options ){
     }
     const path = options.path;
     options = null;
-    // Ensure fail-fast in case we would produce invalid slashing somehow. A resource path always has to:
+    // Ensure fail-fast in case we would produce invalid slashing somehow. A
+    // resource path always has to:
     // 1. Start with a slash,
     // 2. End without a slash,
     // 3. Doesn't contain empty segments (aka double slash).
