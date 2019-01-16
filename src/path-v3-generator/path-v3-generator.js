@@ -160,6 +160,12 @@ function createClass( name , node , pathPrefix ){
     /** 'null' when not based or integer offset instead. */
     const baseOffset = (!isNaN(arguments[4]) ? arguments[4] : null);
 
+    // Normalize pathPrefix to have leading slash only.
+    pathPrefix = UrlUtils.dropSurroundingSlashes( pathPrefix );
+    if( pathPrefix !== "" ){
+        pathPrefix = '/'+ pathPrefix;
+    }
+
     const thisClassName = mangleNameToDifferFromEarlierEqualSegments( segmentToConstantName(name) , segmentStack.slice(0,segmentStack.length-1) );
 
     // Setup constructor
