@@ -12,7 +12,7 @@
 ## v0.5.1 - 2019-01-29
 
 - Make 1st and 2nd generation paths deactivatable.
-  - PR #37.
+  - [PR #37](http://github.com/swisspush/apikana/pull/37).
 - Also take pathPrefix into account in 3rd gen constants.
 - Fixed misleading error message.
 
@@ -21,9 +21,9 @@
 
 - Introduce 3rd generation path generator.
 - Setup testing environment.
-  - PR #31.
+  - [PR #31](github.com/swisspush/apikana/pull/31).
 - Move schema generation into a web worker.
-  - Issue #28, PR #29.
+  - [Issue #28](/swisspush/apikana/issues/28), [PR #29](swisspush/apikana/pull/29).
 
 
 ## v0.4.16 - 2018-07-30
