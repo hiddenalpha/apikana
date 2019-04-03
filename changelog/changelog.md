@@ -4,9 +4,9 @@
 ## v0.5.2 - 2019-03-29
 
 - Added JavaDoc comments to describe default types (aka built-in types).
-  - [PR #39](github.com/swisspush/apikana#39).
+  - [PR #39](http://github.com/swisspush/apikana/39).
 - Added missing cli doc for generate1stGenPaths and generate2ndGenPaths.
-  - [PR #38](http://github.com/swisspush/apikana#38).
+  - [PR #38](http://github.com/swisspush/apikana/38).
 
 
 ## v0.5.1 - 2019-01-29
@@ -21,15 +21,15 @@
 
 - Introduce 3rd generation path generator.
 - Setup testing environment.
-  - [PR #31](github.com/swisspush/apikana/pull/31).
+  - [PR #31](http://github.com/swisspush/apikana/pull/31).
 - Move schema generation into a web worker.
-  - [Issue #28](/swisspush/apikana/issues/28), [PR #29](swisspush/apikana/pull/29).
+  - [Issue #28](http://github.com/swisspush/apikana/issues/28), [PR #29](https://github.com/swisspush/apikana/pull/29).
 
 
 ## v0.4.16 - 2018-07-30
 
 - Fixed required field bug.
-  - Issue #26, PR #27.
+  - [Issue #26](https://github.com/swisspush/apikana/issues/26), [PR #27](http://github.com/swisspush/apikana/pull/27).
 
 
 ## v0.4.15 - 2018-06-05
