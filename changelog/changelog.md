@@ -4,7 +4,7 @@
 ## v0.5.2 - 2019-03-29
 
 - Added JavaDoc comments to describe default types (aka built-in types).
-  - PR #39.
+  - PR [#39].
 - Added missing cli doc for generate1stGenPaths and generate2ndGenPaths.
   - PR #38.
 

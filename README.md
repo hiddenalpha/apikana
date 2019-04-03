@@ -1,5 +1,5 @@
 
 # Apikana gh-pages
 
-See main page in [index.md](./index.md).
+You can find gh-pages entrypoint at [index.md](./index.md).
 
