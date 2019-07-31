@@ -5,6 +5,17 @@ This is latest changelog for apikana. Older changelogs are linked at bottom of
 this file.
 
 
+## v0.5.3 - 2019-07-31
+
+- Changed script injection to not match comments.
+  ([#43](https://github.com/swisspush/apikana/issues/43)).
+- Fix NullPointer when generating error message if path is shorter than
+  pathPrefix.
+  ([#42](http://github.com/swisspush/apikana/pull/42)).
+- Fixed title
+- Add refererence to JSON Schema validation keyword
+
+
 ## v0.5.2 - 2019-03-29
 
 - Added missing cli doc for generate1stGenPaths and generate2ndGenPaths
